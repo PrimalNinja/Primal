@@ -53,7 +53,7 @@ LOADER:  API Level 1. The loader is the lowest level and provides 'a little bit 
 
 MEM:  API Level 2. The mem (or memory) component could have been included within loader, but separating it allowed for a couple of benefits.  A small memory system could choose a smaller footprint if they only required the Level 1 API, but also platforms where there are multiple memory models available can have alternate mem components that can be chosen at run-time.  For example an Amstrad CPC might have 64k or 128k as base models but might also have an additional 256k, 512k, 1024k or 4096k of memory available.  So a variety of mem components are built.  Virtual memory is supported.  Mem is mostly platform specific so new onces can be created, but the generic 'none' mem component is provided for systems that do not have extra memory.
 
-BIOS:  API Level 3.  Not a lot has been developed here yet, still in the design phase.  It is inteded that a driver model will be introduced here so that the BIOS for most part itself will be platform independent but facilitate platform dependant drivers.
+BIOS:  API Level 3.  Not a lot has been developed here yet, still in the design phase.  It is intended that a driver model will be introduced here so that the BIOS for most part itself will be platform independent but facilitate platform dependant drivers.
 
 KERNEL:  API Level 4.  We start getting into some of the higher level parts of the operating system here.  100% platform independent kernel details to come.  This level and every high level should be platform independent.
 
