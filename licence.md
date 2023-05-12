@@ -1,4 +1,4 @@
-Most of the code is here under the following licence unless where specified otherwise where they may be under a different licence or a license.
+Most of the code is here under the following licence unless specified otherwise where they may be under a different licence or a license.
 
 Copyright 2023 Julian Cassin
 
