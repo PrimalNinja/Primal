@@ -1,0 +1,17 @@
+Kernel currently includes:
+
+; 6510 CPU Emulator taken from SID Player v1.4, by Simon Owen
+;
+; WWW: http://simonowen.com/sam/sidplay/
+;
+; Emulates a 6510 CPU to execute code.
+;
+; Features:
+;   - Full 6510 emulation in Z80
+;   - SID playback removed, this is no longer a SID player
+
+Changes made:
+
+- the stack is now in a defined space so that the code can relocate
+- the zero page is now also in a defined space so that the code can relocate
+

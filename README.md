@@ -64,4 +64,19 @@ A lot is not finished, can I do anything with it yet?
 
 ALMOST... as of May 2023, the first couple of platforms have almost been completed ready for testing.  The rest of Target Platform Batch 1 is in various states of completeness.
 
+
+Building Primal (in Windows)
+
+Method 1. Place sjasmplus.exe in the sjasmplus folder. From the MSDOS commandline run sj.bat.
+
+Method 2. Place rasm.exe in the rasm folder. From the MSDOS commandline run rasm.bat. (note: the relocation table features of sjasmplus are not yet supported so use Method 1 for now)
+
+All components will be built in a flash!
+
+
+Coding Applications for Primal
+
+With the exception of loader which should be built to the target platform's best load address (this won't be relocated), applications should be built with org #0000.
+
+
 - Julian
