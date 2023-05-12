@@ -78,5 +78,6 @@ Coding Applications for Primal
 
 With the exception of loader which should be built to the target platform's best load address (this won't be relocated), applications should be built with org #0000.
 
+Detailed Project Status here:   https://docs.google.com/spreadsheets/d/14JQa3cTEd9fIz9lyoQRkzVc5xBz5FhEdr_DC41xPkJs/edit?usp=sharing
 
 - Julian
