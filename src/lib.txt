@@ -1,0 +1,5 @@
+The LIB folder currently includes:
+
+Symbos libraries with permission of Prodatron under whatever licence Symbos is under.
+
+http://symbos.org/  <--- The absolute best 8bit OS to date!

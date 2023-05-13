@@ -8,6 +8,7 @@ call sjasmplus\load_mxd.bat
 call sjasmplus\load_wbw.bat
 call sjasmplus\load_s3k.bat
 call sjasmplus\load_t80.bat
+call sjasmplus\load_vz3.bat
 call sjasmplus\load_tat.bat
 call sjasmplus\load_s16.bat
 call sjasmplus\load_sp.bat
@@ -35,6 +36,7 @@ call sjasmplus\bios_mxd.bat
 call sjasmplus\bios_wbw.bat
 call sjasmplus\bios_s3k.bat
 call sjasmplus\bios_t80.bat
+call sjasmplus\bios_vz3.bat
 call sjasmplus\bios_tat.bat
 call sjasmplus\bios_s16.bat
 call sjasmplus\bios_sp.bat

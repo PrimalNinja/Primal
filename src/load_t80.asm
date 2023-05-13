@@ -2,7 +2,7 @@
 
 STACKSIZE		equ 128
 
-				org #0000
+				org #4a00
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
