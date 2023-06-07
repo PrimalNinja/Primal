@@ -66,9 +66,9 @@ JUMPBLOCKLEVEL1END:
 
 CopyBufferInit:		; initialise the copy buffer
 				xor a
-				ld hl, COPYBUFFER
-				ld de, COPYBUFFER + 1
-				ld bc, COPYBUFFERSIZE - 1
+				ld hl, ADDR_BUFFERS
+				ld de, ADDR_BUFFERS + 1
+				ld bc, ALLOCSIZE - 1
 				ldir
 				ret
 
@@ -326,7 +326,7 @@ LOADER_CommandLine:				; gets commandline parameters
 				ret
 
 LOADER_CopyBuffer:
-				ld hl, COPYBUFFER
+				ld hl, COPYBUFFERADDR
 				ret
 
 LOADER_CopyBufferSize:

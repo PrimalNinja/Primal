@@ -1,8 +1,10 @@
 ;#dialect=RASM
 
 BUILD_ADDR		equ #c000-7
-COPYBUFFERSIZE	equ 128
 STACKSIZE		equ 128
+
+COPYBUFFERSIZE	equ 128
+COPYBUFFERADDR	equ ADDR_BUFFERS
 ALLOCSIZE		equ COPYBUFFERSIZE
 
 CHGET			equ #009f
@@ -14,7 +16,7 @@ CHSNS			equ #009c
 								; MSX BASIC binary header
 				db 0feh
 				dw LOADER
-				dw COPYBUFFER + COPYBUFFERSIZE-1
+				dw ADDR_BUFFERS + ALLOCSIZE - 1
 				dw LOADER
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
@@ -49,7 +51,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw COPYBUFFER + COPYBUFFERSIZE
+				dw ADDR_BUFFERS + ALLOCSIZE
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
@@ -143,6 +145,6 @@ StrOutHL_Loop1end:
 		
 PS_Terminate:	ret				; terminate elegantly
 
-COPYBUFFER:
+ADDR_BUFFERS:
 
 END_OF_LOADER:

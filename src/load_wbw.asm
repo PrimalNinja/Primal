@@ -1,8 +1,10 @@
 ;#dialect=RASM
 
 BUILD_ADDR		equ #0100
-COPYBUFFERSIZE	equ 128
 STACKSIZE		equ 128
+
+COPYBUFFERSIZE	equ 128
+COPYBUFFERADDR	equ ADDR_BUFFERS
 ALLOCSIZE		equ COPYBUFFERSIZE
 
 ADDR_TPA		equ #0006
@@ -47,7 +49,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw COPYBUFFER + COPYBUFFERSIZE
+				dw ADDR_BUFFERS + ALLOCSIZE
 				dw #3fff
 
 				db 1
@@ -171,6 +173,6 @@ PS_CharIn:		ld b, CONSOLEINPUTSTAT	; check if characters in the buffer
 
 PS_Terminate:	ret				; terminate elegantly
 
-COPYBUFFER:
+ADDR_BUFFERS:
 
 END_OF_LOADER:

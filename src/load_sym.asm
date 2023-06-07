@@ -1,8 +1,10 @@
 ;#dialect=RASM
 
 BUILD_ADDR		equ #0000
-COPYBUFFERSIZE	equ 128
 STACKSIZE		equ 128
+
+COPYBUFFERSIZE	equ 128
+COPYBUFFERADDR	equ ADDR_BUFFERS
 ALLOCSIZE		equ COPYBUFFERSIZE
 
 RAM_RESERVE		equ #4000 + ALLOCSIZE	; (32k)
@@ -120,7 +122,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw COPYBUFFER + COPYBUFFERSIZE
+				dw ADDR_BUFFERS + ALLOCSIZE
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
@@ -296,7 +298,7 @@ Transfer_Area_Size equ Transfer_Area_End - Transfer_Area_Start
 				;   LD HL,EXAMPLE
 				;   LD L,A
 
-COPYBUFFER:
+ADDR_BUFFERS:
 
 				relocate_table
 				relocate_end

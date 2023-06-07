@@ -1,9 +1,15 @@
 ;#dialect=RASM
 
 BUILD_ADDR		equ #0040
-COPYBUFFERSIZE	equ 2048
 STACKSIZE		equ 128
-ALLOCSIZE		equ COPYBUFFERSIZE
+
+COPYBUFFERSIZE	equ 128
+COPYBUFFERADDR	equ ADDR_BUFFERS
+
+FILEIOBUFFERSIZE equ 2048
+FILEIOBUFFERADDR equ ADDR_BUFFERS + COPYBUFFERSIZE
+ALLOCSIZE		equ COPYBUFFERSIZE + FILEIOBUFFERSIZE
+
 
 ADDR_RAMTOP		equ #a140		; 40k + #0040 + 256 (stack size)
 CAS_IN_OPEN		equ #bc77
@@ -54,7 +60,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw COPYBUFFER + COPYBUFFERSIZE
+				dw ADDR_BUFFERS + ALLOCSIZE
 				dw #3fff
 
 				db 1
@@ -173,7 +179,7 @@ PS_FileLoad:	push hl
 				call SysStrLen
 				ld b, c
 				pop hl
-				ld de, COPYBUFFERSIZE
+				ld de, FILEIOBUFFERADDR
 				call CAS_IN_OPEN
 				pop hl	; hl now is the load address
 				pop de	; no need the filename anymore
@@ -203,7 +209,7 @@ PS_FileSave:	push hl			; platform specific save
 				call SysStrLen
 				ld b, c
 				pop hl
-				ld de, COPYBUFFERSIZE
+				ld de, FILEIOBUFFERADDR
 				call CAS_OUT_OPEN
 				pop de	; now the save length
 				pop hl	; now the save from address
@@ -238,6 +244,6 @@ PS_Terminate:					; terminate elegantly
 				call SYSTEM_RESET
 				ret	
 
-COPYBUFFER:
+ADDR_BUFFERS:
 
 END_OF_LOADER:

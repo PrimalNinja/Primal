@@ -1,8 +1,10 @@
 ;#dialect=RASM
 
 BUILD_ADDR		equ #8000
-COPYBUFFERSIZE	equ 128
 STACKSIZE		equ 128
+
+COPYBUFFERSIZE	equ 128
+COPYBUFFERADDR	equ ADDR_BUFFERS
 ALLOCSIZE		equ COPYBUFFERSIZE
 
 CHAN_OPEN		equ #1601
@@ -45,7 +47,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw COPYBUFFER + COPYBUFFERSIZE, #bfff
+				dw ADDR_BUFFERS + ALLOCSIZE, #bfff
 
 				db 2
 				dw #c000, #ffff
@@ -155,6 +157,6 @@ StrOutHL_Loop1end:
 		
 PS_Terminate:	ret				; terminate elegantly
 
-COPYBUFFER:
+ADDR_BUFFERS:
 
 END_OF_LOADER:
