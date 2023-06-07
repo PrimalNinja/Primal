@@ -619,6 +619,12 @@ LOADER_LDRPCFileSkip:
 				
 				push de				; **
 				push bc				; ***
+				
+									; update the system pool
+				ld hl, SYSTEMPOOLADDR
+				ld (hl), e
+				inc hl
+				ld (hl), d
 
 									; call main but return to LOADER_LDRPCFileEnd
 				ld hl, LOADER_LDRPCFileEnd

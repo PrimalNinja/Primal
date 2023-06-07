@@ -47,7 +47,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw ADDR_BUFFERS + ALLOCSIZE, #df56
+SYSTEMPOOLADDR:	dw ADDR_BUFFERS + ALLOCSIZE, #df56
 
 				db 2
 				dw #df57, #ff57
