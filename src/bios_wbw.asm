@@ -5,10 +5,10 @@
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
-BIOS:			jp Main			; BIOS provides platform dependent way to access hardware in a uniform way
+RELOC_START:	jp Main			; jump to entry point
 
 								; header
-				dw RelocationTable - BIOS
+				dw RelocationTable - RELOC_START
 				dw 1			; version
 				dw 1			; API compatability ID
 				db 1			; required memory type
@@ -23,13 +23,13 @@ BIOS:			jp Main			; BIOS provides platform dependent way to access hardware in a
 
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
 
-BIOS_KeyIn:		ret	
+PS_KeyIn:		ret	
 		
-BIOS_ISRInit:	ret	
+PS_ISRInit:		ret	
 
 RelocationTable:
 				dw relocate_count
 				relocate_table
 				relocate_end
 
-END_OF_BIOS:
+RELOC_END:

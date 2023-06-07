@@ -4,6 +4,8 @@ ADDR_TPA		equ #0006
 BDOS			equ 5
 CONSOLEOUTPUT	equ 2
 CONSOLEDIRECTIO equ 6
+
+COPYBUFFERSIZE	equ 128
 STACKSIZE		equ 128
 
 				org #0100
@@ -61,9 +63,47 @@ PS_RAMInit:						; initialise RAM
 				ld (MemBlock1End),hl
 				ret				
 
-PS_CanSave:		ld a,1			; can we save to the boot device?
-				or a
-				ret	
+								; table of property tables
+PropertyTable:	dw PropertyTable1, 0
+
+								; table of propertyname zero terminated, 16bit value
+PropertyTable1:	
+				db "CANSAVE", 0, "Y", 0			; is saving to the boot device possible?
+				db "CANDELETE", 0, "Y", 0		; is file deletion possible from the boot device?
+				db "CANBUILD", 0, "Y", 0		; is building possible?
+				db "ISBUILT", 0, "N", 0			; is the system built already?
+				db "HASCLIPARAMS", 0, "N", 0	; does the host have commandline parameter support?
+				db "PROMPTONSTART", 0, "Y", 0	; prompt on startup?
+				db 0
+				
+ADDR_EIDI:		db 0;
+
+					; ------------------------- disable interrupts (supports nesting)
+PS_DI:			di
+				push hl
+				ld hl, ADDR_EIDI
+				inc (hl)
+				;push af
+				;ld a, #c9
+				;ld (adr_isr_intercept), a
+				;pop af
+				pop hl
+				ret
+
+PS_EI:			push af
+				push hl
+				ld hl, ADDR_EIDI
+				dec (hl)
+				ld a, (ADDR_EIDI)
+				and a
+				jr nz, PS_EIEND
+				ei
+				;ld a, #43
+				;ld (adr_isr_intercept), a
+
+PS_EIEND:		pop hl
+				pop af
+				ret
 
 PS_CharIn:		ld c, CONSOLEDIRECTIO
 				ld e, #FF		; #FF = input+status, #FE = status, #FD = input, other = char for output

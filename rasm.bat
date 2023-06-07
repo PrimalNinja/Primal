@@ -24,7 +24,6 @@ call rasm\ams_1024.bat
 call rasm\ams_2048.bat
 call rasm\ams_4096.bat
 call rasm\ams_v64.bat
-call rasm\mem_none.bat
 
 call rasm\bios_ams.bat
 call rasm\bios_col.bat

@@ -10,45 +10,60 @@ MEM_EXTENSION	equ 255
 PatchTable:		dw PatchLevel1, 0
 
 				; API level, jumpblock size in bytes, address of jumpblock
-PatchLevel1:	dw 1, (JUMPBLOCKEND - JUMPBLOCKLEVEL1), JUMPBLOCKLEVEL1
+PatchLevel1:	dw 1, (JUMPBLOCKLEVEL1END - JUMPBLOCKLEVEL1), JUMPBLOCKLEVEL1
 
 JumpBlock:
 
 JUMPBLOCKLEVEL1:				; API Level 1
 
-SysError: 		jp LOADER_Error
-SysMemTable:	jp LOADER_MemTable
-SysRAMSize:		jp LOADER_RAMSize
-SysCommandLine:	jp LOADER_CommandLine
-SysTerminate:	jp PS_Terminate
-SysFileExists:	jp PS_FileExists
-SysFileSize:	jp PS_FileSize
+SysCharIn:		jp PS_CharIn
+SysCharOut:		jp PS_CharOut
+SysCharWait:	jp PS_CharWait
+SysDI:			jp PS_DI
+SysEI:			jp PS_EI
 SysFileDelete:	jp PS_FileDelete
+SysFileExists:	jp PS_FileExists
 SysFileLoad:	jp PS_FileLoad
-SysDecompress:	jp LOADER_Decompress
-SysCheckPrimal:	jp LOADER_CheckPrimal
-SysRelocate:	jp LOADER_Relocate
-SysPatch:		jp LOADER_Patch
-SysLDRPCFile:	jp LOADER_LDRPCFile
-SysCanSave:		jp PS_CanSave
 SysFileSave:	jp PS_FileSave
-SysBuild:		jp LOADER_Error			; NOT YET IMPLEMENTED
+SysFileSize:	jp PS_FileSize
+SysStrIn:		jp PS_StrIn
+SysStrOutHL:	jp PS_StrOutHL
 SystemRestore:	jp LOADER_Error			; NOT YET IMPLEMENTED
 SystemSave:		jp LOADER_Error			; NOT YET IMPLEMENTED
-SysCharOut:		jp PS_CharOut
-SysStrOutHL:	jp PS_StrOutHL
-SysStrOutPC:	jp LOADER_StrOutPC
-SysCharIn:		jp PS_CharIn
-SysCharWait:	jp PS_CharWait
-SysStrIn:		jp PS_StrIn
+SysTerminate:	jp PS_Terminate
+
+SysBuild:		jp LOADER_Error			; NOT YET IMPLEMENTED
+SysCheckPrimal:	jp LOADER_CheckPrimal
+SysCommandLine:	jp LOADER_CommandLine
+SysCopyBuffer: 	jp LOADER_CopyBuffer
+SysCopyBufferSize: jp LOADER_CopyBufferSize
+SysDecompress:	jp LOADER_Decompress
+SysError: 		jp LOADER_Error
+SysLDRPCFile:	jp LOADER_LDRPCFile
+SysMemTable:	jp LOADER_MemTable
+SysPatch:		jp LOADER_Patch
+SysProperty:	jp LOADER_Error			; NOT YET IMPLEMENTED
+SysRAMSize:		jp LOADER_RAMSize
+SysRelocate:	jp LOADER_Relocate
 SysStrCompare:	jp LOADER_StrCompare
 SysStrLen:		jp LOADER_StrLen
+SysStrOutPC:	jp LOADER_StrOutPC
 SysStrSkip:		jp LOADER_StrSkip
 
-JUMPBLOCKEND:
+SysBankCount:	jp LOADER_BankCount
+SysBankedRAMSize: jp LOADER_BankedRAMSize
+SysBankEnd:		jp LOADER_BankEnd
+SysBankSelect:	jp LOADER_BankSelect
+SysBankSize:	jp LOADER_BankSize
+SysBankStart:	jp LOADER_BankStart
+SysBankUnSelect:jp LOADER_BankUnSelect
+
+JUMPBLOCKLEVEL1END:
 		
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
 								
+CopyBuffer:		ds COPYBUFFERSIZE
+
 								; helper functions
 
 					; ------------------------- GetPatchTableAddr
@@ -88,7 +103,7 @@ GetPatchTableAddr:				; hl = code to patch
 
 GetPatchTableLevel:
 				cp 0				; return if we try to find level 0
-				jr z, SysError
+				jp z, SysError
 				
 GetPatchTableLevelLoop:	
 				ld c,a
@@ -99,7 +114,7 @@ GetPatchTableLevelLoop:
 				ld a,e
 				or d
 				ld a,c
-				jp z,SysError	; return if we didn't find our level
+				jp z, SysError	; return if we didn't find our level
 
 				ex de, hl
 
@@ -160,6 +175,32 @@ LOADER_Error:
 				ld a,1
 				or a
 				ret
+				
+LOADER_BankCount:
+				ld a, 0			; returns number of banks
+				ret
+
+LOADER_BankSelect:				; selects memory bank
+				ret
+
+LOADER_BankUnSelect:			; deselects memory bank (same as selecting bank 0)
+				ret
+
+LOADER_BankStart:
+				ld hl,0			; start of current memory bank
+				ret
+
+LOADER_BankEnd:	ld de,0			; end of current memory bank
+				ret
+
+LOADER_BankSize:
+				ld bc,0			; size of current memory bank
+				ret
+				
+LOADER_BankedRAMSize:
+				ld bc,0
+				ld de,0
+				ret
 
 					; ------------------------- MemTable
 					; -- parameters:
@@ -197,7 +238,7 @@ LOADER_RAMSizeLoop:				; sum is in BCDE double-word
 				cp MEM_NONPAGEABLE
 				jr z,LOADER_RAMSizeAddTo
 				
-				cp MEM_EXTENSION
+				cp MEM_PAGEABLE
 				jr z,LOADER_RAMSizeAddTo
 				
 				inc hl			; table position to next block
@@ -276,6 +317,14 @@ LOADER_CheckPrimal:				; validates if the file is primal after loaded
 				ret
 
 LOADER_CommandLine:				; gets commandline parameters
+				ret
+
+LOADER_CopyBuffer:
+				ld hl, CopyBuffer
+				ret
+
+LOADER_CopyBufferSize:
+				ld bc, COPYBUFFERSIZE
 				ret
 
 LOADER_Decompress:				; until it supports any decompression, it must at least accept uncompressed

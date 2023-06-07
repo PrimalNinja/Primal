@@ -24,7 +24,6 @@ call sjasmplus\ams_1024.bat
 call sjasmplus\ams_2048.bat
 call sjasmplus\ams_4096.bat
 call sjasmplus\ams_v64.bat
-call sjasmplus\mem_none.bat
 
 call sjasmplus\bios_ams.bat
 call sjasmplus\bios_col.bat
