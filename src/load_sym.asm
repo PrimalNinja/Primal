@@ -1,11 +1,12 @@
 ;#dialect=RASM
 
+BUILD_ADDR		equ #0000
 RAM_RESERVE		equ #4000		; (32k)
 
 COPYBUFFERSIZE	equ 128
 STACKSIZE		equ 128
 
-				org #0000
+				org BUILD_ADDR
 				relocate_start
 
 								; Symbos stuff
@@ -92,6 +93,7 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
+ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
@@ -135,6 +137,8 @@ PropertyTable1:
 				db "ISBUILT", 0, "N", 0			; is the system built already?
 				db "HASCLIPARAMS", 0, "N", 0	; does the host have commandline parameter support?
 				db "PROMPTONSTART", 0, "Y", 0	; prompt on startup?
+				db "CANSETCURSORPOS", 0, "Y", 0	; can we set the cursor position?
+				db "DEFTEXTRES", 0, 25, 80		; the text resolution (Y, X)
 				db 0
 				
 ADDR_EIDI:		db 0;

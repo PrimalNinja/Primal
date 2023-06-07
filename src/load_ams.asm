@@ -1,6 +1,6 @@
 ;#dialect=RASM
 
-ADDR_2KBUFFER	equ #c000
+BUILD_ADDR		equ #0040
 ADDR_RAMTOP		equ #a140		; 40k + #0040 + 256 (stack size)
 CAS_IN_OPEN		equ #bc77
 CAS_IN_CLOSE	equ #bc7a
@@ -14,13 +14,12 @@ KM_WAIT_CHAR	equ #bb06
 SYSTEM_RESET	equ 0
 TXT_OUT_CHAR	equ #bb5a
 
-GLOBALBUFFERSIZE equ 2048		; buffer taken from main RAM
 FILETYPE_BINARY	equ 2
 
-COPYBUFFERSIZE	equ 128
+COPYBUFFERSIZE	equ 2048
 STACKSIZE		equ 128
 
-				org #0040
+				org BUILD_ADDR
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
@@ -28,6 +27,7 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
+ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
@@ -86,6 +86,8 @@ PropertyTable1:
 				db "ISBUILT", 0, "N", 0			; is the system built already?
 				db "HASCLIPARAMS", 0, "N", 0	; does the host have commandline parameter support?
 				db "PROMPTONSTART", 0, "Y", 0	; prompt on startup?
+				db "CANSETCURSORPOS", 0, "Y", 0	; can we set the cursor position?
+				db "DEFTEXTRES", 0, 25, 80		; the text resolution (Y, X)
 				db 0
 				
 ADDR_EIDI:		db 0;
@@ -169,7 +171,7 @@ PS_FileLoad:	push hl
 				call SysStrLen
 				ld b,c
 				pop hl
-				ld de,ADDR_2KBUFFER
+				ld de,COPYBUFFERSIZE
 				call CAS_IN_OPEN
 				pop hl	; hl now is the load address
 				pop de	; no need the filename anymore
@@ -199,7 +201,7 @@ PS_FileSave:	push hl			; platform specific save
 				call SysStrLen
 				ld b,c
 				pop hl
-				ld de,ADDR_2KBUFFER
+				ld de,COPYBUFFERSIZE
 				call CAS_OUT_OPEN
 				pop de	; now the save length
 				pop hl	; now the save from address

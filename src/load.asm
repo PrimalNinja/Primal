@@ -42,7 +42,7 @@ SysError: 		jp LOADER_Error
 SysLDRPCFile:	jp LOADER_LDRPCFile
 SysMemTable:	jp LOADER_MemTable
 SysPatch:		jp LOADER_Patch
-SysProperty:	jp LOADER_Error			; NOT YET IMPLEMENTED
+SysPropertyPC:	jp LOADER_PropertyPC
 SysRAMSize:		jp LOADER_RAMSize
 SysRelocate:	jp LOADER_Relocate
 SysStrCompare:	jp LOADER_StrCompare
@@ -172,7 +172,7 @@ MathMinHL:		ret
 					; -- all other registers unknown
 
 LOADER_Error:
-				ld a,1
+				ld a, 1
 				or a
 				ret
 				
@@ -187,19 +187,19 @@ LOADER_BankUnSelect:			; deselects memory bank (same as selecting bank 0)
 				ret
 
 LOADER_BankStart:
-				ld hl,0			; start of current memory bank
+				ld hl, 0		; start of current memory bank
 				ret
 
-LOADER_BankEnd:	ld de,0			; end of current memory bank
+LOADER_BankEnd:	ld de, 0		; end of current memory bank
 				ret
 
 LOADER_BankSize:
-				ld bc,0			; size of current memory bank
+				ld bc, 0		; size of current memory bank
 				ret
 				
 LOADER_BankedRAMSize:
-				ld bc,0
-				ld de,0
+				ld bc, 0
+				ld de, 0
 				ret
 
 					; ------------------------- MemTable
@@ -224,8 +224,8 @@ LOADER_MemTable:
 
 LOADER_RAMSize:					; gets the total RAM size
 				ld hl,MemTable	; HL = table position (start of table)
-				ld bc,0
-				ld de,0
+				ld bc, 0
+				ld de, 0
 				
 LOADER_RAMSizeLoop:				; sum is in BCDE double-word
 				ld a,(hl)		; get memory type
@@ -277,7 +277,7 @@ LOADER_RAMSizeAddTo:
 				; add length HL to BCDE
 				add hl,de
 				ex de,hl
-				ld hl,0
+				ld hl, 0
 				adc hl,bc
 				ld c,l
 				ld b,h
@@ -337,12 +337,15 @@ LOADER_Decompress:				; until it supports any decompression, it must at least ac
 					; -- parameters:
 					; -- HL = address of relocation table
 					; -- DE = address of code to relocate
+					; -- BC = original build address of code to relocate
 					; -- return:
 					; -- none
 					; -- corrupt:
 					; -- all other registers unknown
 
 LOADER_Relocate:				; relocator
+				push bc			; put original build address into ix
+				pop ix
 				ld c,(hl)		; get table entries to process into BC
 				inc hl
 				ld b,(hl)
@@ -376,6 +379,12 @@ LOADER_RelocateLoop:
 				ld l,e
 				ld h,d
 				add hl,bc		; r = r+DE
+
+				push ix			; subtract the original build address here to cater for builds that are not 0000
+				pop bc
+				xor a
+				sbc hl, bc
+
 				ld c,l
 				ld b,h
 				pop hl			; restore new address
@@ -524,17 +533,29 @@ LOADER_LDRPCFile:					; load, decompress, relocate, patch file
 				push de				; de = decompressed code
 				ld l,e				; hl = address of relocation table
 				ld h,d
-				inc hl
-				inc hl
-				inc hl
+				inc hl				; skip the jp to main
+				inc hl				;
+				inc hl				;
+				
 				ld e,(hl)			; de = relocation table
 				inc hl
 				ld d,(hl)
+				
 				pop hl				; hl = decompressed code
+
+				push hl				; bc = the original build address here to cater for builds that are not 0000
+				ld bc, ADDR_BUILD - LOADER
+				add hl, bc
+				ld c, (hl)
+				inc hl
+				ld b, (hl)
+				pop hl
+												
 				ex de,hl			; de = decompressed code, hl = relocation table
 				push hl				; push this for later returning as de** NEXT
 				push de				; push this for later returning as bc*** PATCHED
-				call SysRelocate	; relocate bios, hl = address of relocation table, de = address of code to relocate
+				
+				call SysRelocate	; relocate bios, hl = address of relocation table, de = address of code to relocate, bc = original build address
 				pop de				; ***
 				pop hl				; **
 				pop bc				; *
@@ -564,6 +585,83 @@ LOADER_LDRPCFileEnd:
 				pop de				; **
 				ret
 
+				; ------------------------- PropertyPC
+				; -- parameters:
+				; -- none, but the zero-terminated string must be directly after the call
+				; -- return:
+				; -- PC points to the next instruction after the string terminator
+				; -- HL contains the property value
+				; -- corrupt:
+				; -- all other registers unknown
+
+LOADER_PropertyPC:
+				pop hl
+				ld e, l			; de = property to find
+				ld d, h
+				push de
+				call LOADER_StrSkip
+				pop de
+				push hl			; new return address on the stack after the string
+				
+				ld hl, PropertyTable
+
+LOADER_PropertyPCLoop1:			; for each sub table
+				ld c, (hl)
+				inc hl
+				ld b, (hl)
+				inc hl
+				ld a, c
+				or b
+				jr z, LOADER_PropertyPCNotFound1
+				
+				push de			; *
+				push hl			; **
+
+				ex de, hl		; hl = property to find, de = table of property names
+				
+LOADER_PropertyPCLoop2:			; for each property to compare
+
+				ld a, (de)		; check if end of property list
+				or a
+				jr z, LOADER_PropertyPCNextSubList
+				
+				push hl
+				push de
+				call LOADER_StrCompare
+				pop de
+				pop hl
+				jr z, LOADER_PropertyPCFound
+				
+				ex de, hl
+				push de
+				call LOADER_StrSkip
+				pop de
+				ex de, hl
+				inc de			; skip over the property value
+				inc de
+				
+				jr LOADER_PropertyPCLoop2
+
+LOADER_PropertyPCNextSubList:
+				pop hl			; **
+				pop de			; *
+				jr LOADER_PropertyPCLoop1
+
+LOADER_PropertyPCFound:
+				pop de			; **
+				pop de			; *
+				ld e, (hl)		; de = property value
+				inc hl
+				ld d, (hl)
+				ex de, hl		; hl = property value
+				xor a
+				ret
+
+LOADER_PropertyPCNotFound1:
+				ld a, 1
+				or a
+				ret
+				
 				; ------------------------- StrOutPC
 				; -- parameters:
 				; -- none, but the zero-terminated string must be directly after the call
@@ -651,6 +749,13 @@ Main:
 				ld hl,FILENAME_SHELL
 				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call SHELL
 				jr nz,MainEnd
+				
+				call SysPropertyPC
+				db "HASCLIPARAMS", 0
+				jr nz,MainEnd
+				cp "Y"
+				jr nz,MainEnd
+					; we have CLI parameters
 
 MainEnd:
 				ret	

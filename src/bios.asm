@@ -39,7 +39,7 @@ SysError: 		jp 0
 SysLDRPCFile:	jp 0
 SysMemTable:	jp 0
 SysPatch:		jp 0
-SysProperty:	jp 0
+SysPropertyPC:	jp 0
 SysRAMSize:		jp 0
 SysRelocate:	jp 0
 SysStrCompare:	jp 0

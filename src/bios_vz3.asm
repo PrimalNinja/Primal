@@ -1,6 +1,8 @@
 ;#dialect=RASM
 
-				org #0000
+BUILD_ADDR		equ #0000
+
+				org BUILD_ADDR
 				relocate_start
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
@@ -9,6 +11,7 @@ RELOC_START:	jp Main			; jump to entry point
 
 								; header
 				dw RelocationTable - RELOC_START
+				dw BUILD_ADDR
 				dw 1			; version
 				dw 1			; API compatability ID
 				db 1			; required memory type

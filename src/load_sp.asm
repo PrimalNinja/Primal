@@ -1,5 +1,6 @@
 ;#dialect=RASM
 
+BUILD_ADDR		equ #5ccb
 CHAN_OPEN		equ #1601
 KEY_CODE		equ #0333
 KEY_SCAN		equ #028e
@@ -9,7 +10,7 @@ KEY_TEST		equ #031e
 COPYBUFFERSIZE	equ 128
 STACKSIZE		equ 128
 
-				org #5ccb
+				org BUILD_ADDR
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
@@ -17,6 +18,7 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
+ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
@@ -62,6 +64,8 @@ PropertyTable1:
 				db "ISBUILT", 0, "N", 0			; is the system built already?
 				db "HASCLIPARAMS", 0, "N", 0	; does the host have commandline parameter support?
 				db "PROMPTONSTART", 0, "Y", 0	; prompt on startup?
+				db "CANSETCURSORPOS", 0, "Y", 0	; can we set the cursor position?
+				db "DEFTEXTRES", 0, 24, 32		; the text resolution (Y, X)
 				db 0
 				
 ADDR_EIDI:		db 0;
