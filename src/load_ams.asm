@@ -54,7 +54,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw CopyBuffer + COPYBUFFERSIZE
+				dw COPYBUFFER + COPYBUFFERSIZE
 				dw #3fff
 
 				db 1
@@ -68,13 +68,13 @@ MemBlock1End:	dw 0
 				dw 0, 0	
 
 PS_RAMInit:						; initialise RAM
-				ld hl,ADDR_RAMTOP
-				ld sp,hl		; put stack at himem
+				ld hl, ADDR_RAMTOP
+				ld sp, hl		; put stack at himem
 				
-				ld de,STACKSIZE	; calculate new himem to be below the stack
+				ld de, STACKSIZE	; calculate new himem to be below the stack
 				and a
-				sbc hl,de
-				ld (MemBlock1End),hl
+				sbc hl, de
+				ld (MemBlock1End), hl
 				ret		
 
 								; table of property tables
@@ -171,9 +171,9 @@ PS_FileLoad:	push hl
 				push de
 				push hl
 				call SysStrLen
-				ld b,c
+				ld b, c
 				pop hl
-				ld de,COPYBUFFERSIZE
+				ld de, COPYBUFFERSIZE
 				call CAS_IN_OPEN
 				pop hl	; hl now is the load address
 				pop de	; no need the filename anymore
@@ -201,9 +201,9 @@ PS_FileSave:	push hl			; platform specific save
 				push bc
 				push hl
 				call SysStrLen
-				ld b,c
+				ld b, c
 				pop hl
-				ld de,COPYBUFFERSIZE
+				ld de, COPYBUFFERSIZE
 				call CAS_OUT_OPEN
 				pop de	; now the save length
 				pop hl	; now the save from address
@@ -223,9 +223,9 @@ PS_StrIn:						; gets a string input
 
 PS_StrOutHL:					; outputs a string pointed to by HL
 StrOutHL_Loop1:	
-				ld a,(hl)	
+				ld a, (hl)	
 				or a	
-				jr z,StrOutHL_Loop1end	
+				jr z, StrOutHL_Loop1end	
 				push hl	
 				call SysCharOut
 				pop hl	
@@ -238,6 +238,6 @@ PS_Terminate:					; terminate elegantly
 				call SYSTEM_RESET
 				ret	
 
-CopyBuffer:
+COPYBUFFER:
 
 END_OF_LOADER:

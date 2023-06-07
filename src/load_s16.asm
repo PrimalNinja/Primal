@@ -45,7 +45,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw CopyBuffer + COPYBUFFERSIZE, #6f56
+				dw COPYBUFFER + COPYBUFFERSIZE, #6f56
 
 				db 2
 				dw #6f57, #7f57
@@ -100,12 +100,12 @@ PS_EIEND:		pop hl
 				ret
 
 PS_CharIn:		call KEY_SCAN
-				jr nz,PS_CharInNone
+				jr nz, PS_CharInNone
 				call KEY_TEST
-				jr nz,PS_CharInNone
-				ld e,a
-				ld c,0
-				ld d,8
+				jr nz, PS_CharInNone
+				ld e, a
+				ld c, 0
+				ld d, 8
 				call KEY_CODE
 				and a
 				ret
@@ -115,14 +115,14 @@ PS_CharInNone:				; return zero if no key or an error
 				ret
 
 PS_CharOut:		;push af
-				;ld a,2			; select stream 2
+				;ld a, 2		; select stream 2
 				;call CHAN_OPEN
 				;pop af
 				rst 16			; print the character
 				ret	
 		
 PS_CharWait:	call PS_CharIn
-				jr z,PS_CharWait
+				jr z, PS_CharWait
 				ret
 
 PS_CommandLine:	ret				; get commandline parameters
@@ -142,9 +142,9 @@ PS_StrIn:						; gets a string input
 
 PS_StrOutHL:					; outputs a string pointed to by HL
 StrOutHL_Loop1:	
-				ld a,(hl)	
+				ld a, (hl)	
 				or a	
-				jr z,StrOutHL_Loop1end	
+				jr z, StrOutHL_Loop1end	
 				push hl	
 				call SysCharOut
 				pop hl	
@@ -155,6 +155,6 @@ StrOutHL_Loop1end:
 		
 PS_Terminate:	ret				; terminate elegantly
 
-CopyBuffer:
+COPYBUFFER:
 
 END_OF_LOADER:

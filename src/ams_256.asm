@@ -37,23 +37,23 @@ RAM_SEL_PORTS:		defw #7fc4, #7fc5, #7fc6, #7fc7
 					defw #7fd4, #7fd5, #7fd6, #7fd7
 					defw #7fdc, #7fdd, #7fde, #7fdf
 					
-PS_BankCount:	ld a,RAM_SEL_PORT_COUNT			; returns number of banks
+PS_BankCount:	ld a, RAM_SEL_PORT_COUNT; returns number of banks
 				ret
 		
-PS_BankSelect:	ld hl,RAM_SEL_PORTS			; selects memory bank
-				ld b,0
-				ld c,a
-				add hl,bc
-				add hl,hl
-				ld c,(hl)
+PS_BankSelect:	ld hl, RAM_SEL_PORTS	; selects memory bank
+				ld b, 0
+				ld c, a
+				add hl, bc
+				add hl, hl
+				ld c, (hl)
 				inc hl
-				ld b,(hl)
+				ld b, (hl)
 				out (c), c
 				ret
 		
 PS_BankUnSelect:
-				ld bc,#7fc0		; deselects memory bank (same as selecting bank 0)
-				out (c),c
+				ld bc, #7fc0			; deselects memory bank (same as selecting bank 0)
+				out (c), c
 				ret
 				
 PS_BankStart:	ld hl, RAM_BANK_START	; start of current memory bank
@@ -73,3 +73,4 @@ RelocationTable:
 				relocate_end
 
 RELOC_END:
+

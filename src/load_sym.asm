@@ -120,7 +120,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw CopyBuffer + COPYBUFFERSIZE
+				dw COPYBUFFER + COPYBUFFERSIZE
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
@@ -174,12 +174,12 @@ PS_EIEND:		pop hl
 
 PS_CharIn:		ret	
 		
-PS_CharOut:		ld e,0			; E  = Channel (0=Standard, 1=Screen)
-				ld d,a			; d = char to output
+PS_CharOut:		ld e, 0			; E  = Channel (0=Standard, 1=Screen)
+				ld d, a			; d = char to output
 				call SyShell_CHROUT
 				ret	
 				
-PS_CharWait:	ld e,0			; E  = Channel (0=Standard, 1=Keyboard)
+PS_CharWait:	ld e, 0			; E  = Channel (0=Standard, 1=Keyboard)
 				call SyShell_CHRINP
 				xor a
 				ret	
@@ -199,13 +199,13 @@ PS_FileSave:	ret				; platform specific filesave
 PS_StrIn:						; gets a string input
 				ret	
 
-PS_StrOutHL:	ld e,0
+PS_StrOutHL:	ld e, 0
 				call SyShell_STROUT		; outputs a string pointed to by HL
 				xor a
 				ret	
 		
 PS_Terminate:					; terminate elegantly
-				ld e,0                  ; Exit type: Quit (Exit permanently)
+				ld e, 0                 ; Exit type: Quit (Exit permanently)
 				call SyShell_EXIT       ; Mandatory: Tell Shell host that we are quitting
 				jp SySystem_EXIT        ; Exit the program
 
@@ -296,7 +296,7 @@ Transfer_Area_Size equ Transfer_Area_End - Transfer_Area_Start
 				;   LD HL,EXAMPLE
 				;   LD L,A
 
-CopyBuffer:
+COPYBUFFER:
 
 				relocate_table
 				relocate_end

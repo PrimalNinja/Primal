@@ -72,26 +72,26 @@ PATCHBACKEND:
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
 
 MEM_BankedRAMSize:
-				ld hl,RAM_SEL_PORT_COUNT
+				ld hl, RAM_SEL_PORT_COUNT
 
-				ld bc,0
-				ld de,0
+				ld bc, 0
+				ld de, 0
 				
 MEM_BankedRAMSizeLoop:			
-				ld a,l
+				ld a, l
 				or h
 				ret z
 				
 				push hl
 				
 				; add length HL to BCDE
-				ld hl,RAM_BANK_SIZE
-				add hl,de
-				ex de,hl
+				ld hl, RAM_BANK_SIZE
+				add hl, de
+				ex de, hl
 				ld hl,0
-				adc hl,bc
-				ld c,l
-				ld b,h
+				adc hl, bc
+				ld c, l
+				ld b, h
 
 				pop hl
 				dec hl
@@ -99,9 +99,9 @@ MEM_BankedRAMSizeLoop:
 
 Main:
 								; patch this component as the loader patched it already
-				ld hl,PATCHBACKSTART
-				ld bc,PATCHBACKEND - PATCHBACKSTART
-				ld de,PATCHBACKDESTINATION
+				ld hl, PATCHBACKSTART
+				ld bc, PATCHBACKEND - PATCHBACKSTART
+				ld de, PATCHBACKDESTINATION
 				ldir
 
 				call PS_Initialise

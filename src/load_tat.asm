@@ -39,7 +39,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw CopyBuffer + COPYBUFFERSIZE
+				dw COPYBUFFER + COPYBUFFERSIZE
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
@@ -111,9 +111,9 @@ PS_FileSave:	ret				; platform specific filesave
 
 PS_StrOutHL:					; outputs a string pointed to by HL
 StrOutHL_Loop1:	
-				ld a,(hl)	
+				ld a, (hl)	
 				or a	
-				jr z,StrOutHL_Loop1end	
+				jr z, StrOutHL_Loop1end	
 				push hl	
 				call SysCharOut
 				pop hl	
@@ -127,6 +127,6 @@ PS_StrIn:						; gets a string input
 
 PS_Terminate:	ret				; terminate elegantly
 
-CopyBuffer:
+COPYBUFFER:
 
 END_OF_LOADER:

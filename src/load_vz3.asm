@@ -51,22 +51,22 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw CopyBuffer + COPYBUFFERSIZE
+				dw COPYBUFFER + COPYBUFFERSIZE
 MemBlock1End	dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
 				dw 0, 0	
 
 PS_RAMInit:						; initialise RAM
-				ld (DOSVECTOR),iy
+				ld (DOSVECTOR), iy
 
-				ld hl,(RAMTOP)
-				ld sp,hl		; put stack at himem
+				ld hl, (RAMTOP)
+				ld sp, hl		; put stack at himem
 				
-				ld de,STACKSIZE	; calculate new himem to be below the stack
+				ld de, STACKSIZE	; calculate new himem to be below the stack
 				and a
-				sbc hl,de
-				ld (MemBlock1End),hl
+				sbc hl, de
+				ld (MemBlock1End), hl
 				ret				
 
 								; table of property tables
@@ -115,16 +115,16 @@ PS_EIEND:		pop hl
 
 DOSVECTOR:		dw 0			;iy should be stored here as it is used by the system
 
-StrCpy8:		ld c,0				; copy max 8 characters of a . terminated string from hl to de
-StrCpy8Loop:	ld a,c
+StrCpy8:		ld c, 0				; copy max 8 characters of a . terminated string from hl to de
+StrCpy8Loop:	ld a, c
 				cp 8
 				ret z			; max characters?
 				
-				ld a,(hl)
+				ld a, (hl)
 				cp '.'
 				ret z			; a . (i.e. file extension not transferred to DOS vector)
 				
-				ld (de),a
+				ld (de), a
 				inc hl
 				inc de
 				inc c
@@ -138,13 +138,13 @@ PS_CharOut:		call CHAROUT
 		
 PS_CharWait:	call KEYPRESS
 				or a
-				jr z,PS_CharWait
+				jr z, PS_CharWait
 				ret
 		
 PS_CommandLine:	ret				; get commandline parameters
 
 PS_FileExists:					; platform specific fileexists
-				ld iy,(DOSVECTOR)
+				ld iy, (DOSVECTOR)
 				push iy
 				pop de
 				inc de
@@ -152,12 +152,12 @@ PS_FileExists:					; platform specific fileexists
 				
 				call SEARCH
 				cp ERR_FILENOTFOUND
-				jp z,SysError
+				jp z, SysError
 				xor a
 				ret
 
 PS_FileSize:					; platform specific filesize
-				ld iy,(DOSVECTOR)
+				ld iy, (DOSVECTOR)
 				push iy
 				pop de
 				inc de
@@ -165,7 +165,7 @@ PS_FileSize:					; platform specific filesize
 				
 				call SEARCH
 				or a
-				jp nz,SysError
+				jp nz, SysError
 				
 							; where do i get the filesize from?
 				ret
@@ -173,7 +173,7 @@ PS_FileSize:					; platform specific filesize
 PS_FileDelete:	ret				; platform specific filedelete
 
 PS_FileLoad:					; platform specific fileload
-				ld iy,(DOSVECTOR)
+				ld iy, (DOSVECTOR)
 				push iy
 				pop de
 				inc de
@@ -185,7 +185,7 @@ PS_FileLoad:					; platform specific fileload
 
 PS_FileSave:	push de			; platform specific filesave
 				push bc
-				ld iy,(DOSVECTOR)
+				ld iy, (DOSVECTOR)
 				push iy
 				pop de
 				inc de
@@ -193,9 +193,9 @@ PS_FileSave:	push de			; platform specific filesave
 								; how do we specify what memory to save?
 				pop bc
 				pop hl
-				ld (FILESTART),hl
-				add hl,bc
-				ld (FILEEND),hl
+				ld (FILESTART), hl
+				add hl, bc
+				ld (FILEEND), hl
 				
 				call SAVOB
 				or a
@@ -209,6 +209,6 @@ PS_StrOutHL:	call STROUT		; outputs a string pointed to by HL
 		
 PS_Terminate:	ret				; terminate elegantly
 
-CopyBuffer:
+COPYBUFFER:
 
 END_OF_LOADER:

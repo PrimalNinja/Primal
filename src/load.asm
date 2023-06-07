@@ -64,6 +64,14 @@ JUMPBLOCKLEVEL1END:
 								
 								; helper functions
 
+CopyBufferInit:		; initialise the copy buffer
+				xor a
+				ld hl, COPYBUFFER
+				ld de, COPYBUFFER + 1
+				ld bc, COPYBUFFERSIZE - 1
+				ldir
+				ret
+
 					; ------------------------- GetPatchTableAddr
 					; -- parameters:
 					; -- HL = address of the code to patch
@@ -104,19 +112,19 @@ GetPatchTableLevel:
 				jp z, SysError
 				
 GetPatchTableLevelLoop:	
-				ld c,a
-				ld e,(hl)			; de = patch level table
+				ld c, a
+				ld e, (hl)			; de = patch level table
 				inc hl
-				ld d,(hl)
+				ld d, (hl)
 				inc hl
-				ld a,e
+				ld a, e
 				or d
-				ld a,c
+				ld a, c
 				jp z, SysError	; return if we didn't find our level
 
 				ex de, hl
 
-				ld c,(hl)
+				ld c, (hl)
 				cp c
 				jr z, GetPatchTableLevelFound
 
@@ -131,13 +139,13 @@ GetPatchTableLevelLoop:
 GetPatchTableLevelFound:	
 				xor a
 				inc hl
-				ld c,(hl)
+				ld c, (hl)
 				inc hl
-				ld b,(hl)
+				ld b, (hl)
 				inc hl
-				ld e,(hl)
+				ld e, (hl)
 				inc hl
-				ld d,(hl)
+				ld d, (hl)
 				ret
 
 					; ------------------------- MathMinDEHL
@@ -149,16 +157,16 @@ GetPatchTableLevelFound:
 					; -- all other registers unknown
 
 MathMinDEHL:
-				ld a,h
+				ld a, h
 				cp d
 				jr c, MathMinHL
 				jr nc, MathMinDE
-				ld a,l
+				ld a, l
 				cp e
 				jr c, MathMinHL
 				jr nc, MathMinDE
 
-MathMinDE:		ex de,hl
+MathMinDE:		ex de, hl
 MathMinHL:		ret
 
 					; ------------------------- Error
@@ -209,7 +217,7 @@ LOADER_BankedRAMSize:
 					; -- all other registers unknown
 
 LOADER_MemTable:
-				ld hl,MemTable
+				ld hl, MemTable
 				ret				; platform specific memory table 
 
 					; ------------------------- RAMSize
@@ -221,23 +229,23 @@ LOADER_MemTable:
 					; -- all other registers unknown
 
 LOADER_RAMSize:					; gets the total RAM size
-				ld hl,MemTable	; HL = table position (start of table)
+				ld hl, MemTable	; HL = table position (start of table)
 				ld bc, 0
 				ld de, 0
 				
 LOADER_RAMSizeLoop:				; sum is in BCDE double-word
-				ld a,(hl)		; get memory type
+				ld a, (hl)		; get memory type
 				or a
 				ret z			; return if end of table
 				
 				cp MEM_EXTENSION
-				jr z,LOADER_RAMSizeExtension
+				jr z, LOADER_RAMSizeExtension
 				
 				cp MEM_NONPAGEABLE
-				jr z,LOADER_RAMSizeAddTo
+				jr z, LOADER_RAMSizeAddTo
 				
 				cp MEM_PAGEABLE
-				jr z,LOADER_RAMSizeAddTo
+				jr z, LOADER_RAMSizeAddTo
 				
 				inc hl			; table position to next block
 				inc hl
@@ -250,22 +258,22 @@ LOADER_RAMSizeAddTo:
 				push de			; preserve sum so far
 
 				; start = (HL)
-				ld c,(hl)
+				ld c, (hl)
 				inc hl
-				ld b,(hl)
+				ld b, (hl)
 				inc hl
 				; end = (HL)
-				ld e,(hl)
+				ld e, (hl)
 				inc hl
-				ld d,(hl)
+				ld d, (hl)
 				inc hl
 				push hl			;preserve table position
 				
 				; HL = end - start
-				ld l,e
-				ld h,d
+				ld l, e
+				ld h, d
 				xor a
-				sbc hl,bc
+				sbc hl, bc
 				
 				pop ix
 				pop de
@@ -273,12 +281,12 @@ LOADER_RAMSizeAddTo:
 				push ix
 				
 				; add length HL to BCDE
-				add hl,de
-				ex de,hl
+				add hl, de
+				ex de, hl
 				ld hl, 0
-				adc hl,bc
-				ld c,l
-				ld b,h
+				adc hl, bc
+				ld c, l
+				ld b, h
 
 				pop hl
 				jr LOADER_RAMSizeLoop
@@ -288,11 +296,11 @@ LOADER_RAMSizeExtension:
 				push de			; preserve sum so far
 				
 				inc hl			; table position HL = new table address
-				ld e,(hl)
+				ld e, (hl)
 				inc hl
-				ld d,(hl)
-				ld l,e
-				ld h,d
+				ld d, (hl)
+				ld l, e
+				ld h, d
 				
 				pop de
 				pop bc
@@ -307,10 +315,10 @@ LOADER_RAMSizeExtension:
 					; -- all other registers unknown
 
 LOADER_CheckPrimal:				; validates if the file is primal after loaded
-				ld bc,(MSG_PRIMAL - LOADER)
-				add hl,bc
-				ex de,hl
-				ld hl,MSG_PRIMAL
+				ld bc, (MSG_PRIMAL - LOADER)
+				add hl, bc
+				ex de, hl
+				ld hl, MSG_PRIMAL
 				call SysStrCompare
 				ret
 
@@ -318,7 +326,7 @@ LOADER_CommandLine:				; gets commandline parameters
 				ret
 
 LOADER_CopyBuffer:
-				ld hl, CopyBuffer
+				ld hl, COPYBUFFER
 				ret
 
 LOADER_CopyBufferSize:
@@ -326,8 +334,8 @@ LOADER_CopyBufferSize:
 				ret
 
 LOADER_Decompress:				; until it supports any decompression, it must at least accept uncompressed
-				ld e,l
-				ld d,h
+				ld e, l
+				ld d, h
 				xor a			; by simply returning Z = true
 				ret
 								
@@ -344,9 +352,9 @@ LOADER_Decompress:				; until it supports any decompression, it must at least ac
 LOADER_Relocate:				; relocator
 				push bc			; put original build address into ix
 				pop ix
-				ld c,(hl)		; get table entries to process into BC
+				ld c, (hl)		; get table entries to process into BC
 				inc hl
-				ld b,(hl)
+				ld b, (hl)
 				inc hl
 				ld a, b			; return if nothing to relocate
 				or c
@@ -359,36 +367,36 @@ LOADER_RelocateLoop:
 								; DE = start of code to relocate
 								; BC = table entries (preserved)
 
-				ld c,(hl)		; BC = address to relocate
+				ld c, (hl)		; BC = address to relocate
 				inc hl
-				ld b,(hl)
+				ld b, (hl)
 				inc hl
 				push hl			; preserve next table entry
 				push de			; preserve start of code to relocate
 				
-				ld l,e			; na = BC+DE
-				ld h,d
-				add hl,bc
+				ld l, e			; na = BC+DE
+				ld h, d
+				add hl, bc
 				
 				push hl			; preserve new address, HL = new address of which to add DE to
 				ld c, (hl)		; r = (na)
 				inc hl
 				ld b, (hl)
-				ld l,e
-				ld h,d
-				add hl,bc		; r = r+DE
+				ld l, e
+				ld h, d
+				add hl, bc		; r = r+DE
 
 				push ix			; subtract the original build address here to cater for builds that are not 0000
 				pop bc
 				xor a
 				sbc hl, bc
 
-				ld c,l
-				ld b,h
+				ld c, l
+				ld b, h
 				pop hl			; restore new address
-				ld (hl),c		; (na) = r
+				ld (hl), c		; (na) = r
 				inc hl
-				ld (hl),b
+				ld (hl), b
 								
 				pop de			; restore start of code to relocate
 				pop hl			; restore next table entry
@@ -410,7 +418,7 @@ LOADER_Patch:					; jumpblock patcher
 								; hl = patcher, de = to be patched (aka patched)
 				push hl			; check patched is a PRIMAL file
 				push de
-				ex de,hl
+				ex de, hl
 				call SysCheckPrimal
 				pop de
 				pop hl
@@ -427,28 +435,28 @@ LOADER_Patch:					; jumpblock patcher
 				push de			; patched*
 
 				push hl
-				ld l,e			; de = patched
-				ld h,d			;
+				ld l, e			; de = patched
+				ld h, d			;
 				call GetPatchTableAddr	; de = patchtable of patched
-				ex de,hl			;
+				ex de, hl			;
 				pop hl			; hl = patcher
 				call GetPatchTableAddr	; hl = patch table of patcher	
 
 LOADER_PatchLevelLoop:	
 				; for each PatchLevel in hl.PatchTable
 				; {
-				ld e,(hl)			; de = patch level table
+				ld e, (hl)		; de = patch level table
 				inc hl
-				ld d,(hl)
+				ld d, (hl)
 				inc hl
-				ld a,e
+				ld a, e
 				or d
-				jr z,LOADER_PatchLevelLoopEnd		; return if at the end of the level list
+				jr z, LOADER_PatchLevelLoopEnd		; return if at the end of the level list
 				
 				push hl				; for next iteration**
 				
 				; 	A = PatchLevel.Level;
-				ld a,(hl)
+				ld a, (hl)
 				inc hl
 				push hl
 				call GetPatchTableLevel		; DE = destination of ldir, BC = potential length of ldir
@@ -456,19 +464,19 @@ LOADER_PatchLevelLoop:
 				jp nz, LOADER_PatchNext			; if not found in patched then next
 
 				push de				; push destination of ldir***
-				ld e,(hl)			; DE is a anotherpotential length
+				ld e, (hl)			; DE is a anotherpotential length
 				inc hl				;
-				ld d,(hl)			;
+				ld d, (hl)			;
 				inc hl				;
 				push hl
 				call MathMinDEHL				; BC = min(PatchLevel.JumpBlockSize, PatchedLevel.JumpBlockSize);
-				ld c,l				; BC = length of ldir
-				ld b,h
+				ld c, l				; BC = length of ldir
+				ld b, h
 				pop hl
-				ld e,(hl)			; HL = start of ldir
+				ld e, (hl)			; HL = start of ldir
 				inc hl
-				ld d,(hl)
-				ex de,hl
+				ld d, (hl)
+				ex de, hl
 				pop de				; DE = destination of ldir***
 				ldir
 				
@@ -481,14 +489,14 @@ LOADER_PatchLevelLoopEnd:
 				pop hl			; *
 			
 				push hl			; hl = patcher, de = patched
-				ex de,hl			; hl = patched, de = patcher
+				ex de, hl			; hl = patched, de = patcher
 				call GetLoaderAddr
 				pop de
-				ex de,hl
+				ex de, hl
 
-				ld (hl),e			; make the patched point to the patcher
+				ld (hl), e			; make the patched point to the patcher
 				inc hl
-				ld (hl),d
+				ld (hl), d
 
 				xor a
 				ret
@@ -529,15 +537,15 @@ LOADER_LDRPCFile:					; load, decompress, relocate, patch file
 
 				push bc				; *
 				push de				; de = decompressed code
-				ld l,e				; hl = address of relocation table
-				ld h,d
+				ld l, e				; hl = address of relocation table
+				ld h, d
 				inc hl				; skip the jp to main
 				inc hl				;
 				inc hl				;
 				
-				ld e,(hl)			; de = relocation table
+				ld e, (hl)			; de = relocation table
 				inc hl
-				ld d,(hl)
+				ld d, (hl)
 				
 				pop hl				; hl = decompressed code
 
@@ -579,19 +587,44 @@ LOADER_LDRPCFile:					; load, decompress, relocate, patch file
 				pop de				; **
 				jp nz, PatchFailed
 				
+				push ix				; put the amount to reserve into hl
+				pop hl
+				
+				ld a, h				; skip initialisation and reservation if we have 0 to reserve
+				or l
+				jr z, LOADER_LDRPCFileSkip
+
+									; initialise the reserved memory
+				push de				; **
+				push bc				; ***
+				
+				xor a
+				ld c, l
+				ld b, h
+				ld h, d
+				ld l, e
+				ld (hl), a
+				inc de
+				ldir
+								
+				pop bc				; ***
+				pop de				; **
+
 				push ix				; add the reserved amount to de
 				pop hl
 				add hl, de
 				ex de, hl
+
+LOADER_LDRPCFileSkip:
 				
 				push de				; **
 				push bc				; ***
 
 									; call main but return to LOADER_LDRPCFileEnd
-				ld hl,LOADER_LDRPCFileEnd
+				ld hl, LOADER_LDRPCFileEnd
 				push hl
-				ld l,c
-				ld h,b
+				ld l, c
+				ld h, b
 				jp (hl)				
 
 LOADER_LDRPCFileEnd:
@@ -722,7 +755,7 @@ LOADER_StrCompare:
 LOADER_StrLen:	ld bc, 0
 
 LOADER_StrLenLoop1:	
-				ld a,(hl)
+				ld a, (hl)
 				and a
 				ret z
 				inc bc
@@ -744,31 +777,32 @@ LOADER_StrSkip:	xor a
 
 Main:
 				call PS_RAMInit		; initialise MemoryTable
+				call CopyBufferInit	; initialise the Copy Buffer
 
-				ld de,END_OF_LOADER ; location to put first loaded file
-				ld bc,LOADER		; code to patch with initially
+				ld de, END_OF_LOADER ; location to put first loaded file
+				ld bc, LOADER		; code to patch with initially
 
-				ld hl,FILENAME_MEM
+				ld hl, FILENAME_MEM
 				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call MEM
-				jr nz,MainEnd
+				jr nz, MainEnd
 
-				ld hl,FILENAME_BIOS
+				ld hl, FILENAME_BIOS
 				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call BIOS
-				jr nz,MainEnd
+				jr nz, MainEnd
 
-				ld hl,FILENAME_KERNEL
+				ld hl, FILENAME_KERNEL
 				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call KERNEL
-				jr nz,MainEnd
+				jr nz, MainEnd
 
-				ld hl,FILENAME_SHELL
+				ld hl, FILENAME_SHELL
 				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call SHELL
-				jr nz,MainEnd
+				jr nz, MainEnd
 				
 				call SysPropertyPC
 				db "HASCLIPARAMS", 0
-				jr nz,MainEnd
+				jr nz, MainEnd
 				cp "Y"
-				jr nz,MainEnd
+				jr nz, MainEnd
 					; we have CLI parameters
 
 MainEnd:

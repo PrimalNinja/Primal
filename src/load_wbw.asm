@@ -47,7 +47,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw CopyBuffer + COPYBUFFERSIZE
+				dw COPYBUFFER + COPYBUFFERSIZE
 				dw #3fff
 
 				db 1
@@ -61,13 +61,13 @@ MemBlock1End:	dw 0
 				dw 0, 0	
 				
 PS_RAMInit:						; initialise RAM
-				ld hl,(ADDR_TPA)
-				ld sp,hl		; put stack at himem
+				ld hl, (ADDR_TPA)
+				ld sp, hl		; put stack at himem
 				
-				ld de,STACKSIZE	; calculate new himem to be below the stack
+				ld de, STACKSIZE	; calculate new himem to be below the stack
 				and a
-				sbc hl,de
-				ld (MemBlock1End),hl
+				sbc hl, de
+				ld (MemBlock1End), hl
 				ret	
 
 								; table of property tables
@@ -146,9 +146,9 @@ PS_StrIn:						; gets a string input
 
 PS_StrOutHL:					; outputs a string pointed to by HL
 StrOutHL_Loop1:	
-				ld a,(hl)	
+				ld a, (hl)	
 				or a	
-				jr z,StrOutHL_Loop1end	
+				jr z, StrOutHL_Loop1end	
 				push hl	
 				call SysCharOut
 				pop hl	
@@ -171,6 +171,6 @@ PS_CharIn:		ld b, CONSOLEINPUTSTAT	; check if characters in the buffer
 
 PS_Terminate:	ret				; terminate elegantly
 
-CopyBuffer:
+COPYBUFFER:
 
 END_OF_LOADER:
