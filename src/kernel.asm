@@ -60,6 +60,7 @@ SysCopyBufferSize: jp 0
 SysDecompress:	jp 0
 SysError: 		jp 0
 SysLDRPCFile:	jp 0
+SysMathMinDEHL:	jp 0
 SysMemTable:	jp 0
 SysPatch:		jp 0
 SysPropertyPC:	jp 0
@@ -70,6 +71,7 @@ SysStrLen:		jp 0
 SysStrOutPC:	jp 0
 SysStrSkip:		jp 0
 
+SysBank:		jp 0
 SysBankCount:	jp 0
 SysBankedRAMSize: jp 0
 SysBankEnd:		jp 0
@@ -77,6 +79,9 @@ SysBankSelect:	jp 0
 SysBankSize:	jp 0
 SysBankStart:	jp 0
 SysBankUnSelect:jp 0
+SysMemCopyF2F:	jp 0
+SysMemCopyF2N:	jp 0
+SysMemCopyN2F:	jp 0
 
 JUMPBLOCKLEVEL1END:
 

@@ -44,23 +44,19 @@ filename_7fc7:	defb "mem_7fc7.bin", 0
 PS_BankCount:	ld a,RAM_SEL_PORT_COUNT			; returns number of banks
 				ret
 		
-PS_BankSelect:								; selects memory bank
+PS_BankSelect:	ld c, a
+				ld a, (ADDR_CURRENTBANK)
+				cp c
+				ret z
+											; selects memory bank
 				ld hl, RAM_SEL_FILES
 				ld b, 0
-				ld c, a
 				add hl, bc
 				add hl, hl
 				ld c, (hl)				; bc = new filename
 				inc hl
 				ld b, (hl)
-
-				; first check if we already are in this memory
-				; if we are then just return otherwise
-				ld hl, (filename_current)
-				xor a
-				sbc hl, bc
-				ret z
-
+				
 				push bc
 				; save current memory
 				ld hl, (filename_current)
@@ -81,6 +77,8 @@ PS_BankSelect:								; selects memory bank
 				
 				; store the current bank
 				ld (filename_current), hl
+
+				xor a
 				ret
 		
 PS_BankUnSelect:						; deselects memory bank
@@ -109,6 +107,9 @@ PS_BankUnSelect:						; deselects memory bank
 				
 				; store the current bank
 				ld (filename_current), hl
+
+				xor a
+				ld (ADDR_CURRENTBANK), a
 				ret
 				
 PS_BankStart:	ld hl, RAM_BANK_START	; start of current memory bank

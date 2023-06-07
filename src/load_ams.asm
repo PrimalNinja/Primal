@@ -73,6 +73,13 @@ MemBlock1End:	dw 0
 				db 0			; End of Block / can be patched to be an Extension Block
 				dw 0, 0	
 
+				; ------------------------- RAMInit
+				; -- parameters:
+				; -- 	none
+				; -- 
+				; -- return:
+				; -- 	all other registers unknown
+
 PS_RAMInit:						; initialise RAM
 				ld hl, ADDR_RAMTOP
 				ld sp, hl		; put stack at himem
@@ -100,7 +107,13 @@ PropertyTable1:
 				
 ADDR_EIDI:		db 0;
 
-					; ------------------------- disable interrupts (supports nesting)
+					; ------------------------- DI (supports nesting)
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	all other registers preserved
+
 PS_DI:			di
 				push hl
 				ld hl, ADDR_EIDI
@@ -111,6 +124,13 @@ PS_DI:			di
 				;pop af
 				pop hl
 				ret
+
+					; ------------------------- EI (supports nesting)
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	all other registers preserved
 
 PS_EI:			push af
 				push hl
@@ -127,51 +147,93 @@ PS_EIEND:		pop hl
 				pop af
 				ret
 
+					; ------------------------- CharIn
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	A = character if one is pressed on the keyboard, this function does NOT wait
+					; -- 	all other registers unknown
+
 PS_CharIn:		call KM_READ_CHAR
 				ret c
 				xor a
 				ret	
 		
+					; ------------------------- CharOut
+					; -- parameters:
+					; -- 	A = character to output
+					; --
+					; -- return:
+					; -- 	all other registers unknown
+					
 PS_CharOut:		call TXT_OUT_CHAR
 				ret	
 		
+					; ------------------------- CharWait
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	A = character if one is pressed on the keyboard, this function WAITS for a key to be pressed
+					; -- 	all other registers unknown
+
 PS_CharWait:	call KM_WAIT_CHAR
 				ret
 		
+					; ------------------------- CommandLine
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	HL = address of the commandline string
+					; -- 	all other registers unknown
+
 PS_CommandLine:	ret				; get commandline parameters
 
 					; ------------------------- FileExists
 					; -- parameters:
-					; -- HL = filename address
+					; -- 	HL = filename address
+					; -- 
 					; -- return:
-					; -- Z if TRUE if the file exists, NZ if FALSE
-					; -- corrupt:
-					; -- AF, BC, DE, HL
+					; -- 	Z if TRUE if the file exists, NZ if FALSE
+					; -- 	all other registers unknown
 
 PS_FileExists:	jp SysError		; platform specific fileexists
 				ret				
 
 					; ------------------------- FileSize
 					; -- parameters:
-					; -- HL = filename address
+					; -- 	HL = filename address
+					; -- 
 					; -- return:
-					; -- BC = filesize
-					; -- Z if TRUE, NZ if FALSE
-					; -- corrupt:
-					; -- AF, BC, DE, HL
+					; -- 	BC = filesize
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
 
 PS_FileSize:	xor a			; platform specific filesize
 				ret
+
+					; ------------------------- FileSize
+					; -- parameters:
+					; -- 	HL = filename address
+					; -- 
+					; -- return:
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
 
 PS_FileDelete:	ret				; platform specific filedelete
 
 					; ------------------------- FileLoad
 					; -- parameters:
-					; -- HL = filename address
+					; -- 	HL = filename address
+					; -- 
 					; -- return:
-					; -- Z if TRUE, NZ if FALSE
-					; -- corrupt:
-					; -- AF, BC, DE, HL
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
 
 PS_FileLoad:	push hl
 				push de
@@ -194,13 +256,14 @@ PS_FileLoad:	push hl
 
 					; ------------------------- FileSave
 					; -- parameters:
-					; -- HL = filename address
-					; -- DE = save from address
-					; -- BC = save length
+					; -- 	HL = filename address
+					; -- 	DE = save from address
+					; -- 	BC = save length
+					; -- 
 					; -- return:
-					; -- Z if TRUE, NZ if FALSE
-					; -- corrupt:
-					; -- AF, BC, DE, HL
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
 
 PS_FileSave:	push hl			; platform specific save
 				push de
@@ -224,8 +287,22 @@ PS_FileSave:	push hl			; platform specific save
 				xor a
 				ret
 				
+				; ------------------------- StrIn
+				; -- parameters:
+				; -- 	none
+				; -- 
+				; -- return:
+				; -- 	all other registers unknown
+
 PS_StrIn:						; gets a string input
 				ret	
+
+				; ------------------------- StrOutHL
+				; -- parameters:
+				; -- 	HL = address of zero-terminated string
+				; -- 
+				; -- return:
+				; -- 	all other registers unknown
 
 PS_StrOutHL:					; outputs a string pointed to by HL
 StrOutHL_Loop1:	
@@ -240,6 +317,13 @@ StrOutHL_Loop1:
 StrOutHL_Loop1end:	
 				ret	
 		
+				; ------------------------- Terminate
+				; -- parameters:
+				; -- 	none
+				; -- 
+				; -- return:
+				; -- 	all other registers unknown
+
 PS_Terminate:					; terminate elegantly
 				call SYSTEM_RESET
 				ret	

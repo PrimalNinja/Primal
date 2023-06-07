@@ -36,6 +36,7 @@ SysCopyBufferSize: jp 0
 SysDecompress:	jp 0
 SysError: 		jp 0
 SysLDRPCFile:	jp 0
+SysMathMinDEHL:	jp 0
 SysMemTable:	jp 0
 SysPatch:		jp 0
 SysPropertyPC:	jp 0
@@ -48,6 +49,7 @@ SysStrSkip:		jp 0
 
 PATCHBACKDESTINATION:
 
+SysBank:		jp 0
 SysBankCount:	jp 0
 SysBankedRAMSize: jp 0
 SysBankEnd:		jp 0
@@ -55,11 +57,15 @@ SysBankSelect:	jp 0
 SysBankSize:	jp 0
 SysBankStart:	jp 0
 SysBankUnSelect:jp 0
+SysMemCopyF2F:	jp 0
+SysMemCopyF2N:	jp 0
+SysMemCopyN2F:	jp 0
 
 JUMPBLOCKLEVEL1END:	
 
 PATCHBACKSTART:					; API Level 1 (patch back)
 
+				jp MEM_Bank
 				jp PS_BankCount
 				jp MEM_BankedRAMSize
 				jp PS_BankEnd
@@ -67,9 +73,33 @@ PATCHBACKSTART:					; API Level 1 (patch back)
 				jp PS_BankSize
 				jp PS_BankStart
 				jp PS_BankUnSelect
+				jp MEM_MemCopyF2F
+				jp MEM_MemCopyF2N
+				jp MEM_MemCopyN2F
 
 PATCHBACKEND:
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
+
+ADDR_CURRENTBANK: db 0			; the currently selected bank
+
+					; ------------------------- Bank
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	A = the currently selected bank
+					; -- 	all other registers preserved
+
+MEM_Bank:		ld a, (ADDR_CURRENTBANK)
+				ret
+
+					; ------------------------- BankSize
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	BCDE = size of all banked RAM
+					; -- 	all other registers unknown
 
 MEM_BankedRAMSize:
 				ld hl, RAM_SEL_PORT_COUNT
@@ -96,6 +126,91 @@ MEM_BankedRAMSizeLoop:
 				pop hl
 				dec hl
 				jr MEM_BankedRAMSizeLoop
+
+					; ------------------------- Copy Far to Far (via copy buffer)
+					; -- parameters:
+					; -- 	D = source bank
+					; -- 	IX = source address
+					; -- 	E = destination bank
+					; -- 	IY = destination address
+					; -- 	BC = number of bytes to copy
+					; -- 
+					; -- return:
+					; -- 	all other registers unknown
+					
+MEM_MemCopyF2F:	call SysDI
+				call SysBank
+				push af		; preserve current bank
+MEM_MemCopyF2FLoop:
+				ld a, c		; end if BC = 0
+				or b
+				jr z, MEM_MemCopyF2FEnd
+
+							; copysize = min(copybuffersize, bc)
+				; TODO
+							; select source bank
+				; TODO			
+							; copy from source to copybuffer size copysize
+				; TODO			
+							; select destination bank
+				; TODO			
+							; copy from copybuffer to destination size copysize
+				; TODO			
+							; subtract copysize from bc
+				; TODO
+
+				jr MEM_MemCopyF2FLoop
+				
+MEM_MemCopyF2FEnd:
+				pop af		; restore current bank
+				call SysBankSelect
+				call SysEI
+				ret
+
+					; ------------------------- Copy Far to Near (via copy buffer)
+					; -- parameters:
+					; -- 	A = source bank
+					; -- 	HL = source address
+					; -- 	DE = destination address
+					; -- 	BC = number of bytes to copy
+					; --
+					; -- return:
+					; -- 	all other registers unknown
+					
+MEM_MemCopyF2N:	push hl
+				pop ix
+				
+				push de
+				pop iy
+
+				ld d, a
+				call SysBank
+				ld e, a
+				
+				jp MEM_MemCopyF2F
+				
+					; ------------------------- Copy Near to Far (via copy buffer) 
+					; -- parameters:
+					; -- 	HL = source address
+					; -- 	A = destination bank
+					; -- 	DE = destination address
+					; -- 	BC = number of bytes to copy
+					; --
+					; -- return:
+					; -- 	all other registers unknown
+					
+MEM_MemCopyN2F:	push hl
+				pop ix
+				
+				push de
+				pop iy
+				
+				ld e, a
+				call SysBank
+				ld d, a
+				
+				jp MEM_MemCopyF2F
+
 
 Main:
 								; patch this component as the loader patched it already

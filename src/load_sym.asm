@@ -7,7 +7,7 @@ COPYBUFFERSIZE	equ 128
 COPYBUFFERADDR	equ ADDR_BUFFERS
 ALLOCSIZE		equ COPYBUFFERSIZE
 
-RAM_RESERVE		equ #4000 + ALLOCSIZE	; (32k)
+RAM_RESERVE		equ #4000	; (32k)
 
 				org BUILD_ADDR
 				relocate_start
@@ -97,7 +97,7 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
 ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
-ALLOC_SIZE:		dw ALLOCSIZE	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
+ALLOC_SIZE:		dw 0			; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
@@ -122,7 +122,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-SYSTEMPOOLADDR:	dw ADDR_BUFFERS + ALLOCSIZE
+SYSTEMPOOLADDR:	dw 0
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
@@ -211,6 +211,8 @@ PS_Terminate:					; terminate elegantly
 				call SyShell_EXIT       ; Mandatory: Tell Shell host that we are quitting
 				jp SySystem_EXIT        ; Exit the program
 
+ADDR_BUFFERS:
+
 END_OF_LOADER:
 
 
@@ -297,8 +299,6 @@ Transfer_Area_Size equ Transfer_Area_End - Transfer_Area_Start
 				; Write instead:
 				;   LD HL,EXAMPLE
 				;   LD L,A
-
-ADDR_BUFFERS:
 
 				relocate_table
 				relocate_end

@@ -40,6 +40,7 @@ SysCopyBufferSize: jp LOADER_CopyBufferSize
 SysDecompress:	jp LOADER_Decompress
 SysError: 		jp LOADER_Error
 SysLDRPCFile:	jp LOADER_LDRPCFile
+SysMathMinDEHL:	jp LOADER_MathMinDEHL
 SysMemTable:	jp LOADER_MemTable
 SysPatch:		jp LOADER_Patch
 SysPropertyPC:	jp LOADER_PropertyPC
@@ -50,6 +51,7 @@ SysStrLen:		jp LOADER_StrLen
 SysStrOutPC:	jp LOADER_StrOutPC
 SysStrSkip:		jp LOADER_StrSkip
 
+SysBank:		jp LOADER_Bank
 SysBankCount:	jp LOADER_BankCount
 SysBankedRAMSize: jp LOADER_BankedRAMSize
 SysBankEnd:		jp LOADER_BankEnd
@@ -57,6 +59,9 @@ SysBankSelect:	jp LOADER_BankSelect
 SysBankSize:	jp LOADER_BankSize
 SysBankStart:	jp LOADER_BankStart
 SysBankUnSelect:jp LOADER_BankUnSelect
+SysMemCopyF2F:	jp LOADER_MemCopyF2F
+SysMemCopyF2N:	jp LOADER_MemCopyF2N
+SysMemCopyN2F:	jp LOADER_MemCopyN2F
 
 JUMPBLOCKLEVEL1END:
 		
@@ -64,7 +69,14 @@ JUMPBLOCKLEVEL1END:
 								
 								; helper functions
 
-CopyBufferInit:		; initialise the copy buffer
+					; ------------------------- CopyBufferInit
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	all other registers unknown
+
+CopyBufferInit:					; initialise the copy buffer
 				xor a
 				ld hl, ADDR_BUFFERS
 				ld de, ADDR_BUFFERS + 1
@@ -72,40 +84,43 @@ CopyBufferInit:		; initialise the copy buffer
 				ldir
 				ret
 
-					; ------------------------- GetPatchTableAddr
+					; ------------------------- GetLoaderAddr
 					; -- parameters:
-					; -- HL = address of the code to patch
+					; -- 	HL = address of the code to get loader address of
+					; --
 					; -- return:
-					; -- HL = address of loader of the code
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	HL = address of loader of the code
+					; -- 	all other registers unknown
 
-GetLoaderAddr:					; hl = code to patch
+GetLoaderAddr:					; hl = code address
 				ld bc,(ADDR_LOADER - LOADER)
 				add hl, bc
 				ret
 			
 					; ------------------------- GetPatchTableAddr
 					; -- parameters:
-					; -- HL = address of the code to patch
+					; -- 	HL = address of the code to patch
+					; --
 					; -- return:
-					; -- HL = address of the patch table
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	HL = address of the patch table
+					; -- 	all other registers unknown
 
-GetPatchTableAddr:				; hl = code to patch
+GetPatchTableAddr:				; hl = code address
 				ld bc,(ADDR_PATCHTABLE - LOADER)
 				add hl, bc
 				ret
 				
 					; ------------------------- GetPatchTableLevel
 					; -- parameters:
-					; -- HL = patched table, A = level to find (non-zero)
+					; -- 	HL = patched table
+					; --	A = level to find (non-zero)
+					; --
 					; -- return:
-					; -- Z = false (i.e. NZ)
-					; -- Z = true (i.e. Z), BC = patch size, DE = jumpblock to patch
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; --	BC = patch size
+					; -- 	DE = jumpblock to patch
+					; -- 	all other registers unknown
 
 GetPatchTableLevel:
 				cp 0				; return if we try to find level 0
@@ -150,13 +165,14 @@ GetPatchTableLevelFound:
 
 					; ------------------------- MathMinDEHL
 					; -- parameters:
-					; -- HL = number 1, DE = number 2
+					; -- 	HL = number 1
+					; --	DE = number 2
+					; --
 					; -- return:
-					; -- HL = the minimum
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	HL = the minimum
+					; -- 	all other registers unknown
 
-MathMinDEHL:
+LOADER_MathMinDEHL:
 				ld a, h
 				cp d
 				jr c, MathMinHL
@@ -171,38 +187,105 @@ MathMinHL:		ret
 
 					; ------------------------- Error
 					; -- parameters:
-					; -- none
+					; -- 	none
+					; --
 					; -- return:
-					; -- Z = false (i.e. NZ), E might contain the reason
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
 
 LOADER_Error:
 				ld a, 1
 				or a
 				ret
+
+					; ------------------------- Bank
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	A = the currently selected bank
+					; -- 	all other registers preserved
+
+LOADER_Bank:	xor a			; return the current bank
+				ret
 				
+					; ------------------------- BankCount
+					; -- parameters:
+					; -- 	none
+					; --
+					; -- return:
+					; -- 	A = the number of available banks
+					; -- 	all other registers preserved
+
 LOADER_BankCount:
-				ld a, 0			; returns number of banks
+				xor a			; returns number of banks
 				ret
 
+					; ------------------------- BankSelect
+					; -- parameters:
+					; -- 	A = bank number to select
+					; --
+					; -- return:
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
+
 LOADER_BankSelect:				; selects memory bank
-				ret
+				jp LOADER_Error
+
+					; ------------------------- BankUnSelect
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	all other registers unknown
 
 LOADER_BankUnSelect:			; deselects memory bank (same as selecting bank 0)
 				ret
+
+					; ------------------------- BankStart
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	HL = start address of current bank
+					; -- 	all other registers preserved
 
 LOADER_BankStart:
 				ld hl, 0		; start of current memory bank
 				ret
 
+					; ------------------------- BankEnd
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	HL = end address of current bank
+					; -- 	all other registers preserved
+
 LOADER_BankEnd:	ld de, 0		; end of current memory bank
 				ret
+
+					; ------------------------- BankSize
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	HL = size of current bank
+					; -- 	all other registers preserved
 
 LOADER_BankSize:
 				ld bc, 0		; size of current memory bank
 				ret
 				
+					; ------------------------- BankSize
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	BCDE = size of all banked RAM
+					; -- 	all other registers unknown
+
 LOADER_BankedRAMSize:
 				ld bc, 0
 				ld de, 0
@@ -210,11 +293,11 @@ LOADER_BankedRAMSize:
 
 					; ------------------------- MemTable
 					; -- parameters:
-					; -- none
+					; -- 	none
+					; -- 
 					; -- return:
-					; -- HL = address of the memory table
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	HL = address of the memory table
+					; -- 	all other registers preserved
 
 LOADER_MemTable:
 				ld hl, MemTable
@@ -222,11 +305,11 @@ LOADER_MemTable:
 
 					; ------------------------- RAMSize
 					; -- parameters:
-					; -- HL = none
+					; -- 	none
+					; -- 
 					; -- return:
-					; -- BCDE = double word containing the size of avaialble RAM
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	BCDE = double word containing the size of avaialble RAM
+					; -- 	all other registers unknown
 
 LOADER_RAMSize:					; gets the total RAM size
 				ld hl, MemTable	; HL = table position (start of table)
@@ -308,11 +391,11 @@ LOADER_RAMSizeExtension:
 				
 					; ------------------------- CheckPrimal
 					; -- parameters:
-					; -- HL = address of code to check
+					; -- 	HL = address of code to check
+					; -- 
 					; -- return:
-					; -- Z = true if the file is a PRIMAL file, NZ if not
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	Z = true if the file is a PRIMAL file, NZ if not
+					; -- 	all other registers unknown
 
 LOADER_CheckPrimal:				; validates if the file is primal after loaded
 				ld bc, (MSG_PRIMAL - LOADER)
@@ -325,13 +408,39 @@ LOADER_CheckPrimal:				; validates if the file is primal after loaded
 LOADER_CommandLine:				; gets commandline parameters
 				ret
 
+					; ------------------------- CopyBuffer
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	HL = address of the copybuffer
+					; -- 	all other registers preserved
+
 LOADER_CopyBuffer:
 				ld hl, COPYBUFFERADDR
 				ret
 
+					; ------------------------- CopyBufferSize
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	HL = size of the copybuffer
+					; -- 	all other registers preserved
+
 LOADER_CopyBufferSize:
 				ld bc, COPYBUFFERSIZE
 				ret
+
+					; ------------------------- Decompress
+					; -- parameters:
+					; -- 	HL = address of code to decompress
+					; -- 
+					; -- return:
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	DE = address of decompressed file if we can decompress
+					; -- 	all other registers unknown
 
 LOADER_Decompress:				; until it supports any decompression, it must at least accept uncompressed
 				ld e, l
@@ -339,15 +448,77 @@ LOADER_Decompress:				; until it supports any decompression, it must at least ac
 				xor a			; by simply returning Z = true
 				ret
 								
+					; ------------------------- Copy Far to Far (via copy buffer)
+					; -- parameters:
+					; -- 	D = source bank
+					; -- 	IX = source address
+					; -- 	E = destination bank
+					; -- 	IY = destination address
+					; -- 	BC = number of bytes to copy
+					; -- 
+					; -- return:
+					; -- 	all other registers unknown
+					
+LOADER_MemCopyF2F:
+				ld a, d
+				or a
+				jp nz, LOADER_Error
+				
+				ld a, e
+				or a
+				jp nz, LOADER_Error
+				
+				push ix
+				pop hl
+				push iy
+				pop de
+				ldir
+				ret
+
+					; ------------------------- Copy Far to Near (via copy buffer)
+					; -- parameters:
+					; -- 	A = source bank
+					; -- 	HL = source address
+					; -- 	DE = destination address
+					; -- 	BC = number of bytes to copy
+					; --
+					; -- return:
+					; -- 	all other registers unknown
+					
+LOADER_MemCopyF2N:
+				or a
+				jp nz, LOADER_Error
+				
+				ldir
+				ret
+				
+					; ------------------------- Copy Near to Far (via copy buffer)
+					; -- parameters:
+					; -- 	HL = source address
+					; -- 	A = destination bank
+					; -- 	DE = destination address
+					; -- 	BC = number of bytes to copy
+					; --
+					; -- return:
+					; -- 	all other registers unknown
+					
+LOADER_MemCopyN2F:
+				or a
+				jp nz, LOADER_Error
+				
+				ldir
+				ret
+
 					; ------------------------- Relocate
 					; -- parameters:
-					; -- HL = address of relocation table
-					; -- DE = address of code to relocate
-					; -- BC = original build address of code to relocate
+					; -- 	HL = address of relocation table
+					; -- 	DE = address of code to relocate
+					; -- 	BC = original build address of code to relocate
+					; -- 
 					; -- return:
-					; -- none
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
 
 LOADER_Relocate:				; relocator
 				push bc			; put original build address into ix
@@ -407,12 +578,13 @@ LOADER_RelocateLoop:
 
 					; ------------------------- Patch
 					; -- parameters:
-					; -- HL = patcher, DE = to be patched (aka patched)
+					; -- 	HL = patcher
+					; -- 	DE = to be patched (aka patched)
+					; -- 
 					; -- return:
-					; -- Z = false (i.e. NZ), E might contain the reason
-					; -- Z = true (i.e. Z)
-					; -- corrupt:
-					; -- all other registers unknown
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	all other registers unknown
 
 LOADER_Patch:					; jumpblock patcher
 								; hl = patcher, de = to be patched (aka patched)
@@ -469,7 +641,7 @@ LOADER_PatchLevelLoop:
 				ld d, (hl)			;
 				inc hl				;
 				push hl
-				call MathMinDEHL				; BC = min(PatchLevel.JumpBlockSize, PatchedLevel.JumpBlockSize);
+				call SysMathMinDEHL			; BC = min(PatchLevel.JumpBlockSize, PatchedLevel.JumpBlockSize);
 				ld c, l				; BC = length of ldir
 				ld b, h
 				pop hl
@@ -503,15 +675,16 @@ LOADER_PatchLevelLoopEnd:
 		
 					; ------------------------- LDRPCFile
 					; -- parameters:
-					; -- HL = filename address
-					; -- DE = file load destination
-					; -- BC = address of code to patch with
+					; -- 	HL = filename address
+					; -- 	DE = file load destination
+					; --	BC = address of code to patch with
+					; --
 					; -- return:
-					; -- bc = address of start of file
-					; -- de = first address beyond end of file (for next file to load at)
-					; -- Z if TRUE, NZ if FALSE
-					; -- corrupt:
-					; -- AF, BC, DE, HL
+					; -- 	Z = true (i.e. Z) if successful
+					; -- 	Z = false (i.e. NZ), E might contain the reason
+					; -- 	BC = address of start of file
+					; -- 	DE = first address beyond end of file (for next file to load at)
+					; -- 	all other registers unknown
 
 LOADER_LDRPCFile:					; load, decompress, relocate, patch file
 									; get bios filesize, hl = address of filename
@@ -640,12 +813,13 @@ LOADER_LDRPCFileEnd:
 
 				; ------------------------- PropertyPC
 				; -- parameters:
-				; -- none, but the zero-terminated string must be directly after the call
+				; -- 	zero-terminated string must be directly after the call
+				; --
 				; -- return:
-				; -- PC points to the next instruction after the string terminator
-				; -- HL contains the property value
-				; -- corrupt:
-				; -- all other registers unknown
+				; --	Z = true if the property is found, Z = false (i.e. NZ) if not
+				; -- 	PC points to the next instruction after the string terminator
+				; -- 	HL contains the property value
+				; -- 	all other registers unknown
 
 LOADER_PropertyPC:
 				pop hl
@@ -717,11 +891,11 @@ LOADER_PropertyPCNotFound1:
 				
 				; ------------------------- StrOutPC
 				; -- parameters:
-				; -- none, but the zero-terminated string must be directly after the call
+				; -- 	zero-terminated string must be directly after the call
+				; -- 
 				; -- return:
-				; -- PC points to the next instruction after the string terminator
-				; -- corrupt:
-				; -- all other registers unknown
+				; -- 	PC points to the next instruction after the string terminator
+				; -- 	all other registers unknown
 
 LOADER_StrOutPC:				; outputs a string pointed to by on the stack PC
 				pop hl
@@ -732,12 +906,12 @@ LOADER_StrOutPC:				; outputs a string pointed to by on the stack PC
 		
 				; ------------------------- StrCompare
 				; -- parameters:
-				; -- HL = zero terminated string source of truth
-				; -- DE = string to compare
+				; -- 	HL = zero terminated string source of truth
+				; -- 	DE = string to compare
+				; -- 
 				; -- return:
-				; -- Z if true, NZ if not true
-				; -- corrupt:
-				; -- all other registers unknown
+				; -- 	Z if equal, NZ if not
+				; -- 	all other registers unknown
 
 LOADER_StrCompare:	
 				ex de, hl
@@ -752,11 +926,11 @@ LOADER_StrCompare:
 			
 				; ------------------------- StrLen
 				; -- parameters:
-				; -- HL = zero terminated string
+				; -- 	HL = zero terminated string
+				; -- 
 				; -- return:
-				; -- BC = length
-				; -- corrupt:
-					; -- all other registers unknown
+				; -- 	BC = length
+				; -- 	all other registers unknown
 
 LOADER_StrLen:	ld bc, 0
 
@@ -770,11 +944,11 @@ LOADER_StrLenLoop1:
 
 				; ------------------------- StrSkip
 				; -- parameters:
-				; -- HL = zero terminated string
+				; -- 	HL = zero terminated string
+				; -- 
 				; -- return:
-				; -- HL = address following the zero of the zero-terminated string
-				; -- corrupt:
-				; -- all other registers unknown
+				; -- 	HL = address following the zero of the zero-terminated string
+				; -- 	all other registers unknown
 
 LOADER_StrSkip:	xor a
 				cpir
