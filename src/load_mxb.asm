@@ -1,19 +1,20 @@
 ;#dialect=RASM
 
 BUILD_ADDR		equ #c000-7
+COPYBUFFERSIZE	equ 128
+STACKSIZE		equ 128
+ALLOCSIZE		equ COPYBUFFERSIZE
+
 CHGET			equ #009f
 CHPUT			equ #00a2
 CHSNS			equ #009c
-
-COPYBUFFERSIZE	equ 128
-STACKSIZE		equ 128
 
 				org BUILD_ADDR
 
 								; MSX BASIC binary header
 				db 0feh
 				dw LOADER
-				dw END_OF_LOADER-1
+				dw CopyBuffer + COPYBUFFERSIZE-1
 				dw LOADER
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
@@ -23,6 +24,7 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
 ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
+ALLOC_SIZE:		dw ALLOCSIZE	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
@@ -47,7 +49,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw END_OF_LOADER
+				dw CopyBuffer + COPYBUFFERSIZE
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
@@ -140,5 +142,7 @@ StrOutHL_Loop1end:
 				ret	
 		
 PS_Terminate:	ret				; terminate elegantly
+
+CopyBuffer:
 
 END_OF_LOADER:

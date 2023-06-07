@@ -1,14 +1,15 @@
 ;#dialect=RASM
 
 BUILD_ADDR		equ #5ccb
+COPYBUFFERSIZE	equ 128
+STACKSIZE		equ 128
+ALLOCSIZE		equ COPYBUFFERSIZE
+
 CHAN_OPEN		equ #1601
 KEY_CODE		equ #0333
 KEY_SCAN		equ #028e
 KEY_TABLE		equ #0205
 KEY_TEST		equ #031e
-
-COPYBUFFERSIZE	equ 128
-STACKSIZE		equ 128
 
 				org BUILD_ADDR
 
@@ -19,6 +20,7 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
 ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
+ALLOC_SIZE:		dw ALLOCSIZE	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
@@ -43,7 +45,7 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 255 = Extension Block (anything following an extension record is ignored)
 MemTable:		
 				db 1
-				dw END_OF_LOADER, #df56
+				dw CopyBuffer + COPYBUFFERSIZE, #df56
 
 				db 2
 				dw #df57, #ff57
@@ -152,5 +154,7 @@ StrOutHL_Loop1end:
 				ret	
 		
 PS_Terminate:	ret				; terminate elegantly
+
+CopyBuffer:
 
 END_OF_LOADER:

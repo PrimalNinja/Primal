@@ -62,8 +62,6 @@ JUMPBLOCKLEVEL1END:
 		
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
 								
-CopyBuffer:		ds COPYBUFFERSIZE
-
 								; helper functions
 
 					; ------------------------- GetPatchTableAddr
@@ -549,13 +547,24 @@ LOADER_LDRPCFile:					; load, decompress, relocate, patch file
 				ld c, (hl)
 				inc hl
 				ld b, (hl)
+				inc hl
+				
+				push bc				; ix = amount to reserve at the end of this file that is loaded and relocated
+				ld c, (hl)
+				inc hl
+				ld b, (hl)
+				push bc
+				pop ix
+				pop bc
 				pop hl
 												
 				ex de,hl			; de = decompressed code, hl = relocation table
 				push hl				; push this for later returning as de** NEXT
 				push de				; push this for later returning as bc*** PATCHED
 				
+				push ix
 				call SysRelocate	; relocate bios, hl = address of relocation table, de = address of code to relocate, bc = original build address
+				pop ix
 				pop de				; ***
 				pop hl				; **
 				pop bc				; *
@@ -570,10 +579,15 @@ LOADER_LDRPCFile:					; load, decompress, relocate, patch file
 				pop de				; **
 				jp nz, PatchFailed
 				
+				push ix				; add the reserved amount to de
+				pop hl
+				add hl, de
+				ex de, hl
+				
 				push de				; **
 				push bc				; ***
 
-									; call main
+									; call main but return to LOADER_LDRPCFileEnd
 				ld hl,LOADER_LDRPCFileEnd
 				push hl
 				ld l,c
