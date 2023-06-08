@@ -38,8 +38,20 @@ SysCommandLine:	jp LOADER_CommandLine
 SysCopyBuffer: 	jp LOADER_CopyBuffer
 SysCopyBufferSize: jp LOADER_CopyBufferSize
 SysDecompress:	jp LOADER_Decompress
+SysDriverList:	jp LOADER_DriverList
 SysError: 		jp LOADER_Error
+SysHeapAlloc:	jp LOADER_HeapAlloc
+SysHeapFree:	jp LOADER_HeapFree
+SysHeapInit:	jp LOADER_HeapInit
+SysHeapList:	jp LOADER_HeapList
 SysLDRPCFile:	jp LOADER_LDRPCFile
+SysListAppend:	jp LOADER_ListAppend
+SysListDelete:	jp LOADER_ListDelete
+SysListInit:	jp LOADER_ListInit
+SysListPrepend:	jp LOADER_ListPrepend
+SysListSearch:	jp LOADER_ListSearch
+SysListSort:	jp LOADER_ListSort
+SysListTraverse: jp LOADER_ListTraverse
 SysMathMinDEHL:	jp LOADER_MathMinDEHL
 SysMemTable:	jp LOADER_MemTable
 SysPatch:		jp LOADER_Patch
@@ -66,6 +78,9 @@ SysMemCopyN2F:	jp LOADER_MemCopyN2F
 JUMPBLOCKLEVEL1END:
 		
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
+
+DriverList:		dw 0
+HeapList:		dw 0
 								
 								; helper functions
 
@@ -163,6 +178,27 @@ GetPatchTableLevelFound:
 				ld d, (hl)
 				ret
 
+LOADER_ListAppend:
+				ret
+				
+LOADER_ListDelete:
+				ret
+				
+LOADER_ListInit:
+				ret
+				
+LOADER_ListPrepend:
+				ret
+				
+LOADER_ListSearch:
+				ret
+				
+LOADER_ListSort:
+				ret
+				
+LOADER_ListTraverse:
+				ret
+
 					; ------------------------- MathMinDEHL
 					; -- parameters:
 					; -- 	HL = number 1
@@ -185,6 +221,18 @@ LOADER_MathMinDEHL:
 MathMinDE:		ex de, hl
 MathMinHL:		ret
 
+					; ------------------------- DriverList
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	HL = address of the driver list
+					; -- 	all other registers preserved
+
+LOADER_DriverList:
+				ld hl, (DriverList)
+				ret
+
 					; ------------------------- Error
 					; -- parameters:
 					; -- 	none
@@ -196,6 +244,135 @@ MathMinHL:		ret
 LOADER_Error:
 				ld a, 1
 				or a
+				ret
+
+LOADER_HeapAlloc:
+				ret
+
+LOADER_HeapFree:
+				ret
+
+					; ------------------------- HeapInit
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	all other registers unknown
+
+LOADER_HeapInit:				; initialise the system heap
+				ld iy, 0		; previous heap node pointer
+				ld ix, 0		; current heap node pointer
+				ld bc, 0		; first heap node pointer
+				call SysMemTable	; HL = table position (start of table)
+				
+LOADER_HeapInitLoop:			; sum is in BCDE double-word
+				ld a, (hl)		; get memory type
+				or a
+				jr z, LOADER_HeapInitEnd	; return if end of table
+				
+				cp MEM_EXTENSION
+				jr z, LOADER_HeapInitExtension
+				
+				cp MEM_NONPAGEABLE
+				jr z, LOADER_HeapInitAddBlock
+				
+				inc hl			; table position to next block
+				inc hl
+				inc hl
+				inc hl
+				jr LOADER_HeapInitLoop
+
+LOADER_HeapInitAddBlock:
+				push bc			; *
+
+				push ix			; iy = previous
+				pop iy			;
+				
+				ld c, (hl)		; bc = node header start
+				inc hl
+				ld b, (hl)
+				inc hl
+
+				push hl			; ix = current
+				pop ix			;
+
+				ld e, (hl)		; de = end
+				inc hl
+				ld d, (hl)
+				inc hl
+				
+				push hl			; **
+
+				ld l, e			; HL = size
+				ld h, d
+				xor a
+				sbc hl, bc
+				dec hl			; subtract the header size from hl (5 bytes header)
+				dec hl
+				dec hl
+				dec hl
+				dec hl
+				
+				xor a			; set the FREE flag
+				ld (ix+0), a
+
+								; set the SIZE
+				ld (ix+1), l
+				ld (ix+2), h
+
+				ld (ix+3), a	; set the next pointer
+				ld (ix+4), a
+
+				push iy			; if no previous yet, then skip
+				pop bc
+				ld a,b
+				or c
+				jr z, LOADER_HeapInitSkip
+
+								; otherwise
+				push ix			; set the previous.next pointer
+				pop bc
+				ld (iy+3), c
+				ld (iy+4), b
+				
+LOADER_HeapInitSkip:
+				pop hl			; **
+				pop bc			; *
+				ld a, b
+				or c
+				jr nz, LOADER_HeapInitLoop
+
+				push ix			; store our return value
+				pop bc
+				
+				jr LOADER_HeapInitLoop
+
+LOADER_HeapInitExtension:
+				inc hl			; table position HL = new table address
+				ld e, (hl)
+				inc hl
+				ld d, (hl)
+				ld l, e
+				ld h, d
+				
+				jr LOADER_HeapInitLoop
+
+LOADER_HeapInitEnd:
+				push bc
+				pop hl
+				ld (HeapList), hl
+				ret
+				
+					; ------------------------- HeapList
+					; -- parameters:
+					; -- 	none
+					; -- 
+					; -- return:
+					; -- 	HL = address of the heap list
+					; -- 	all other registers unknown
+
+LOADER_HeapList:
+				ld hl, (HeapList)
 				ret
 
 					; ------------------------- Bank
@@ -231,7 +408,7 @@ LOADER_BankCount:
 					; -- 	all other registers unknown
 
 LOADER_BankSelect:				; selects memory bank
-				jp LOADER_Error
+				jp SysError
 
 					; ------------------------- BankUnSelect
 					; -- parameters:
@@ -312,7 +489,7 @@ LOADER_MemTable:
 					; -- 	all other registers unknown
 
 LOADER_RAMSize:					; gets the total RAM size
-				ld hl, MemTable	; HL = table position (start of table)
+				call SysMemTable	; HL = table position (start of table)
 				ld bc, 0
 				ld de, 0
 				
@@ -462,11 +639,11 @@ LOADER_Decompress:				; until it supports any decompression, it must at least ac
 LOADER_MemCopyF2F:
 				ld a, d
 				or a
-				jp nz, LOADER_Error
+				jp nz, SysError
 				
 				ld a, e
 				or a
-				jp nz, LOADER_Error
+				jp nz, SysError
 				
 				push ix
 				pop hl
@@ -487,7 +664,7 @@ LOADER_MemCopyF2F:
 					
 LOADER_MemCopyF2N:
 				or a
-				jp nz, LOADER_Error
+				jp nz, SysError
 				
 				ldir
 				ret
@@ -504,7 +681,7 @@ LOADER_MemCopyF2N:
 					
 LOADER_MemCopyN2F:
 				or a
-				jp nz, LOADER_Error
+				jp nz, SysError
 				
 				ldir
 				ret
@@ -826,7 +1003,7 @@ LOADER_PropertyPC:
 				ld e, l			; de = property to find
 				ld d, h
 				push de
-				call LOADER_StrSkip
+				call SysStrSkip
 				pop de
 				push hl			; new return address on the stack after the string
 				
@@ -854,14 +1031,14 @@ LOADER_PropertyPCLoop2:			; for each property to compare
 				
 				push hl
 				push de
-				call LOADER_StrCompare
+				call SysStrCompare
 				pop de
 				pop hl
 				jr z, LOADER_PropertyPCFound
 				
 				ex de, hl
 				push de
-				call LOADER_StrSkip
+				call SysStrSkip
 				pop de
 				ex de, hl
 				inc de			; skip over the property value
@@ -963,19 +1140,28 @@ Main:
 				ld bc, LOADER		; code to patch with initially
 
 				ld hl, FILENAME_MEM
-				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call MEM
+				call SysLDRPCFile	; load, decompress, relocate, patch, call MEM
 				jr nz, MainEnd
 
 				ld hl, FILENAME_BIOS
-				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call BIOS
+				call SysLDRPCFile	; load, decompress, relocate, patch, call BIOS
 				jr nz, MainEnd
 
 				ld hl, FILENAME_KERNEL
-				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call KERNEL
+				call SysLDRPCFile	; load, decompress, relocate, patch, call KERNEL
 				jr nz, MainEnd
 
 				ld hl, FILENAME_SHELL
-				call LOADER_LDRPCFile	; load, decompress, relocate, patch, call SHELL
+				call SysLDRPCFile	; load, decompress, relocate, patch, call SHELL
+				jr nz, MainEnd
+				
+										; initialise main heap
+				ld hl, HeapList
+				call SysHeapInit
+										
+										; load drivers into heap
+				ld hl, FILENAME_DRIVER
+				; TODO					; load driver
 				jr nz, MainEnd
 				
 				call SysPropertyPC
@@ -1014,3 +1200,5 @@ FILENAME_MEM:	db "MEM.PRM", 0
 FILENAME_BIOS:	db "BIOS.PRM", 0
 FILENAME_KERNEL:db "KERNEL.PRM", 0
 FILENAME_SHELL:	db "SHELL.PRM", 0
+
+FILENAME_DRIVER: db "DRIVER.DRV", 0
