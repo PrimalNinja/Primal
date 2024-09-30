@@ -124,7 +124,7 @@ StrOutHL_Loop1:
 StrOutHL_Loop1end:	
 				ret	
 		
-PS_StrIn:						; gets a string input
+PS_StrInput:					; gets a string input
 				ret	
 
 PS_Terminate:	ret				; terminate elegantly

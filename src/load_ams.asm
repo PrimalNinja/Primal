@@ -294,7 +294,7 @@ PS_FileSave:	push hl			; platform specific save
 				; -- return:
 				; -- 	all other registers unknown
 
-PS_StrIn:						; gets a string input
+PS_StrInput:					; gets a string input
 				ret	
 
 				; ------------------------- StrOutHL

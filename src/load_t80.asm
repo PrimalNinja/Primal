@@ -111,7 +111,7 @@ PS_FileLoad:	ret				; platform specific fileload
 
 PS_FileSave:	ret				; platform specific filesave
 
-PS_StrIn:						; gets a string input
+PS_StrInput:					; gets a string input
 				ret	
 
 PS_StrOutHL:					; outputs a string pointed to by HL

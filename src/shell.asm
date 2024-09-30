@@ -47,7 +47,7 @@ SysFileExists:	jp 0
 SysFileLoad:	jp 0
 SysFileSave:	jp 0
 SysFileSize:	jp 0
-SysStrIn:		jp 0
+SysStrInput:	jp 0
 SysStrOutHL:	jp 0
 SystemRestore:	jp 0
 SystemSave:		jp 0

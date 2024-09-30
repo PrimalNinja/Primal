@@ -22,7 +22,7 @@ SysFileExists:	jp 0
 SysFileLoad:	jp 0
 SysFileSave:	jp 0
 SysFileSize:	jp 0
-SysStrIn:		jp 0
+SysStrInput:	jp 0
 SysStrOutHL:	jp 0
 SystemRestore:	jp 0
 SystemSave:		jp 0
@@ -150,7 +150,11 @@ MEM_BankedRAMSizeLoop:
 					; -- return:
 					; -- 	all other registers unknown
 					
-MEM_MemCopyF2F:	call SysDI
+MEM_MemCopyF2F:	ld a, d		; if both source and destination banks are the same, just go to the fast near copy
+				or e
+				jp z, MEM_MemCopyF2FNear
+				
+				call SysDI
 				call SysBank
 				push af		; preserve current bank
 MEM_MemCopyF2FLoop:
@@ -158,18 +162,75 @@ MEM_MemCopyF2FLoop:
 				or b
 				jr z, MEM_MemCopyF2FEnd
 
-							; copysize = min(copybuffersize, bc)
-				; TODO
+				push bc		; preserve total size to copy
+				
+							; iteration bc = min(copybuffersize, bc)
+				push de
+				call SysCopyBufferSize
+				ld de, bc
+				call SysMathMinDEHL
+				ld bc, hl
+				pop de		; de = bank numbers
+				
 							; select source bank
-				; TODO			
-							; copy from source to copybuffer size copysize
-				; TODO			
+				push bc
+				push de
+				push ix
+				push iy
+				ld a, d
+				call SysBankSelect
+				pop iy		; iy = destination
+				pop ix		; ix = source
+				pop de		; de = bank numbers
+				pop bc		; bc = iteration copysize
+				
+							; copy from source to copybuffer size iteration copysize
+				push bc
+				push de
+
+				call SysCopyBuffer
+				ld de, ix
+				ex de, hl
+				ldir
+				
+				pop de		; de = bank numbers
+				pop bc		; bc = iteration copysize
+				
 							; select destination bank
-				; TODO			
-							; copy from copybuffer to destination size copysize
-				; TODO			
+				push bc
+				push de
+				push ix
+				push iy
+				ld a, e
+				call SysBankSelect
+				pop iy		; iy = destination
+				pop ix		; ix = source
+				pop de		; de = bank numbers
+				pop bc		; bc = iteration copysize
+
+							; copy from copybuffer to destination size iteration copysize
+				push bc
+				push de
+
+				call SysCopyBuffer
+				ld de, iy
+				ldir
+
+				pop de		; de = bank numbers
+				pop bc		; bc = iteration copysize
+				
+							; add iteration copysize to ix
+				ld hl, bc	; hl = copybuffersize
+				add hl, ix
+				ld ix, hl
+							; add iteration copysize to iy
+				ld hl, bc	; hl = copybuffersize
+				add hl, iy
+				ld iy, hl
 							; subtract copysize from bc
-				; TODO
+				pop hl		; hl = total iteration copysize
+				add hl, bc
+				ld bc, hl
 
 				jr MEM_MemCopyF2FLoop
 				
@@ -177,6 +238,12 @@ MEM_MemCopyF2FEnd:
 				pop af		; restore current bank
 				call SysBankSelect
 				call SysEI
+				ret
+				
+MEM_MemCopyF2FNear:
+				ld hl, ix
+				ld de, iy
+				ldir
 				ret
 
 					; ------------------------- Copy Far to Near (via copy buffer)

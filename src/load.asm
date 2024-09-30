@@ -26,7 +26,7 @@ SysFileExists:	jp PS_FileExists
 SysFileLoad:	jp PS_FileLoad
 SysFileSave:	jp PS_FileSave
 SysFileSize:	jp PS_FileSize
-SysStrIn:		jp PS_StrIn
+SysStrInput:	jp PS_StrInput
 SysStrOutHL:	jp PS_StrOutHL
 SystemRestore:	jp LOADER_Error			; NOT YET IMPLEMENTED
 SystemSave:		jp LOADER_Error			; NOT YET IMPLEMENTED
@@ -246,10 +246,28 @@ LOADER_Error:
 				or a
 				ret
 
+					; ------------------------- Allocate Memory on the Heap
+					; -- parameters:
+					; -- 	HL = number of bytes to allocate
+					; -- 
+					; -- return:
+					; -- 	all other registers unknown
+					
 LOADER_HeapAlloc:
+				; TODO
+				call SysHeapList
 				ret
 
+					; ------------------------- Return Memory to the Heap
+					; -- parameters:
+					; -- 	A = bank
+					; -- 	HL = address
+					; -- 
+					; -- return:
+					; -- 	all other registers unknown
+					
 LOADER_HeapFree:
+				; TODO
 				ret
 
 					; ------------------------- HeapInit
