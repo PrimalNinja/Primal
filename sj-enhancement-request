@@ -1,0 +1,185 @@
+Hi,i was wondering... if you would enhance RASM in a certain way (related to packed far addresses).
+
+Please let me know your thoughts.  
+
+Happy to donte you a 6128 Plus if you would do it. 
+(computer only verified to work, possibly needs new drive belt and BASIC cart if I cannot find one)
+
+
+The way I would implement it is as follows: 
+
+
+; --------------------------------------------------
+ENABLEAUTOBANKING directive
+
+enables automatic banking and packed far addresses
+
+ENABLEAUTOBANKING <flag>
+
+flag = true or false, true means we want automatic banking and packed far addresses, false means current behaviour
+
+
+
+; --------------------------------------------------
+DEFINEZONE directive
+
+this just defines some rules giving it a zone number for later reference, we could potentially have 
+multiple banked areas of RAM if banks are in different zones
+
+DEFINEZONE <n>, <start>, <length>, <alignment>, <bankedflag>
+
+n = 0 to 65535, default is 0 as per current meaning every bit of code is in the same zone
+start = 0 to 65535, start address of zone
+length = 0 to 65535, end address of zone
+alignment = 1 to 4096, the alignment of code in that zone, default = 1
+bankedflag = true or false, true means this zone is banked, false means it is not banked
+
+
+
+; --------------------------------------------------
+.align label suffix
+
+this is a label suffix to denote which labels should be far addresses WHEN referenced from a different bank
+
+normal label (CANNOT be referenced from another bank):
+
+print_str:	; in a loop, call print_char
+			ret
+
+print_char:	<blah>
+			ret
+
+aligned label (CAN be referenced from another bank):
+
+print_str.align:
+			; in a loop, call print_char
+			ret
+
+print_char:	<blah>
+			ret
+
+
+; --------------------------------------------------
+BANK / ENDBANK directives
+
+<zone> = 0 to 65535, default is 0 as per current meaning every bit of code is in the same zone
+
+note: a bank is not a zone, we are not specifying the content of a bank but rather the rules to follow 
+when banking (which is automatic - see behaviour below).
+
+i.e.
+
+BANK <zone>
+; code between BANK and ENDBANK adheres to specified zone parameters
+ENDBANK
+
+
+; --------------------------------------------------
+Assembling behaviour:
+
+As code assembles, you need to track banks for each zone - the start address and memory left.  Each zone may have only main z80 
+memory, or it may have banked memory.  Just treat them the same.
+
+Only labels suffixed with .align are byte aligned *IF* referenced from another bank / zone - other labels are as per normal.  
+This allows a far call to a group of related routines and subroutines and only have a far call to the routine, the subroutines 
+will be in the same bank and don't need to be far.
+
+During assembly it tries to fit the block (current BANK / ENDBANK) in the current bank length remaining.
+If the code fits, then it goes in the current bank, and we reduce the memory left for that bank.
+If the code doesn't fit, then it goes in the next bank, the previous bank may have left-over.
+If it is too big for the specified zone length, then we get a warning and assembly ends.
+
+
+At the end of assembly, we get a list of bank usage and left-overs for each zone - ideally in a txt file.
+Filenames below are just with a 16bit counter, but... whever naming scheme is ok... below is compatible with 8 letter filenames.
+
+e.g. 
+
+ZONE 0: #0040 - #3fff							; this is just the zone start and end
+BANK 0: out-0000.bin, #0040 - #2000, #2000		; this is what is used, note: #2000 is left over
+
+ZONE 1: #4000 - #7fff							; this is just the zone start and end
+BANK 0: out-0001.bin, #4000 - #7000, #fff		; this is what is used, note: #fff is left over
+BANK 1: out-0002.bin, #4000 - #7fff				; this is what is used
+
+ZONE 2: #8000 - #a000							; this is just the zone start and end
+BANK 0: out-0003.bin, #8000 - #9000, #1000		; this is what is used, note: #1000 is left over
+
+
+; --------------------------------------------------
+Example code:
+
+				ENABLEAUTOBANKING true			; turn on autobanking
+
+				DEFINEZONE 0, #0040, #3fc0, 1, false
+				DEFINEZONE 1, #4000, #4000, 256, true
+				DEFINEZONE 2, #8000, #2000, 1, false
+
+BANK 0
+			; some code that hopefully will fit in ZONE 0, note we configured zone 0 to have no banks, CODE BLOCK A
+
+mylabel1:	call mylabel2
+			call mylabel7
+			call mylabel8
+			ret
+ENDBANK
+
+BANK 0
+			; some more code that hopefully will fit in ZONE 0 along with what is already there, CODE BLOCK B
+
+mylabel2:	call mylabel3		; note: this calls a byte aligned label
+								; assembler will later change call mylabel3 to RST 6; dw mylabel3
+								
+			ret
+ENDBANK
+
+BANK 1
+			; some code that will hopefully fit in a bank of ZONE 1, if it is too big for the zone, through a warning
+
+mylabel3.align:					; note: this label is byte aligned, the programmer said it 'might be aligned'
+								; the assembler saw that it actually needs to be aligned as it is called outside of the bank
+								
+			call mylabel4
+			ret
+
+mylabel4.align:					; note: this label is byte aligned, the programmer said it 'might be aligned'
+								; the assembler saw that it *DOES NOT* need to be aligned, so it doesn't align it
+								
+			call mylabel6		; note: this calls a byte aligned label
+								; assembler will later change call mylabel6 to RST 6; dw mylabel6
+
+			ret
+
+mylabel5:	ret
+ENDBANK
+
+BANK 1
+			; some code that will hopefully fit in a bank of ZONE 1, if it is too big for the zone, through a warning
+			; it might it in the same block as other BANK 1 blocks, but in this example it didn't and went to the next bank automatically
+
+mylabel6.align:					; note: this label is byte aligned, the programmer said it 'might be aligned'
+								; the assembler saw that it actually needs to be aligned as it is called outside of the bank
+			ret
+ENDBANK
+
+BANK 2
+			; some code that hopefully will fit in ZONE 2, note we configured zone 2 to have no banks, CODE BLOCK E
+
+mylabel7:	; blah
+			ret
+ENDBANK
+
+BANK 0
+			; some more code that hopefully will fit in ZONE 0 along with what is already there, CODE BLOCK F
+
+mylabel8:	; blah
+			ret
+ENDBANK
+
+note: 
+
+out-0000.bin would contain CODE BLOCKS A, B and F which has no far calls into it, it might make far calls out though
+out-0001.bin would contain CODE BLOCKS C
+out-0002.bin would contain CODE BLOCKS D
+out-0003.bin would contain CODE BLOCKS E which has no far calls into it, it might make far calls out though
+

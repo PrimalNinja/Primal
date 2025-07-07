@@ -1,0 +1,58 @@
+RATAPI:
+
+SysRATStart - returns start address of RAT
+SysRATBankCount - return count of RAT banks
+SysRATInit - initialises RAT to contain only "-" where there is not already an "R" in the ShadowRAT
+SysRATForceInit - initialises RAT to contain only "-" and updates shadowRAT to contain only - (shadowRAT may be on disc)
+SysRATAlloc - can allocate full bank or 64kb with a given status, "A", or "R" 
+			- full bank would be just "A" or "R", 64kb would be an "A" or "R" followed by "EEE"
+SysRATFree - can free the RAT along with any trailing Es
+SysRATSet - can set to "-" (free), "A" (allocated), "E" (extension), "H" (heap), "R" (reserved)
+SysRATBank - return the bank for the current RAT address
+
+SysUnpackAddr - unpacks a packed far address
+SysPackAddr - packs an unpacked far address
+
+SysHeapInit - initialise the bank for the heap
+SysHeapAdd - add a RAT to the heap
+SysHeapAlloc - allocate some space on the heap
+SysHeapFree - return previously allocated space to the heap
+
+note: "A" or "R" are very much alike except that "R" survives a reset, it's up to the application to put some type of identifier within any reserved 
+blocks so that it can treat them and only them upon resuming a reset.  "A" are assumed to not survive a reset in the normal sense.  For example, a RAM
+disc may allocate with "A" if it is to not survive a reset, but it might allocate with an "R" to both survive a reset but also if shelled out it knows
+it's reserved RAM will be there again later.  RAT entries that have extensions are not paged out as they must be in consecutive order always.
+
+e.g:
+		call SysRATInit		; initialise the system RAT
+
+							; initialise 32 banks of RAM for heap use
+		ld bc, 32
+loop1:	push bc
+		
+		ld c, 'A'
+		ld de, mcp
+		call SysBankSize	; we want the entire bank
+		call SysRATAlloc	; allocate our desired size from the system RAT, returns the packed far address in HL
+		
+		call SysUnpackAddr	; unpack the packed address that was in HL
+		call SysBankSelect
+		call SysHeapInit	; initialise our bank for heap use (initialise the bank RAT)
+		call SysHeapAdd		; add our bank to the system heap
+		call SysBankUnSelect
+		
+		pop bc
+		djnz loop1
+		
+		ld hl, 1024
+		call SysHeapAlloc	; returns packed far address in HL
+		push hl
+		call SysUnpackAddr
+		...					; do something with a 24 bit address
+		pop hl
+		call SysHeapFree	; frees memory pointed to by HL
+		
+		ret
+		
+mcp:	text "MCP", 0
+

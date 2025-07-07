@@ -1,24 +1,24 @@
 ;#dialect=RASM
 
-BUILD_ADDR		equ #0000
-ALLOCSIZE		equ 0
+ORG_BUILD		equ #0000
+SIZE_ALLOC		equ 0
 
-				org BUILD_ADDR
+				org ORG_BUILD
 				relocate_start
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
-RELOC_START:	jp Main			; jump to entry point
+START_RELOC:	jp Main			; jump to entry point
 
 								; header
-				dw RelocationTable - RELOC_START
-				dw BUILD_ADDR
-				dw ALLOCSIZE	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
+				dw TABLE_RELOC - START_RELOC
+				dw ORG_BUILD
+				dw SIZE_ALLOC	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
 				dw 1			; version
 				dw 1			; API compatability ID
 				db 1			; required memory type
-				dw PatchTable
-ADDR_JUMPBLOCK:	dw JumpBlock	; pointer to the jumpblock
+				dw TABLE_PATCH
+ADDR_JUMPBLOCK:	dw JUMPBLOCK	; pointer to the jumpblock
 				dw 0			; pointer to the ISR
 ADDR_LOADER:	dw 0			; pointer to the component that loaded this
 				db "PRIMAL", 0	; type must be after the jump to main
@@ -28,12 +28,16 @@ ADDR_LOADER:	dw 0			; pointer to the component that loaded this
 
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
 
-RAM_SEL_PORT_COUNT	equ 255
+RAM_SEL_PORT_APPHEAP_COUNT	equ 193
+RAM_SEL_PORT_SYSHEAP_COUNT	equ 33
+RAM_SEL_PORT_BUFFHEAP_COUNT	equ 33	; not supported in this model
+
 RAM_BANK_START		equ #4000
 RAM_BANK_END		equ #7FFF
 RAM_BANK_SIZE		equ #4000
-RAM_SEL_PORTS:		defw #78c4, #78c5, #78c6, #78c7
-					defw #78cc, #78cd, #78ce, #78cf
+
+RAM_SEL_APP_PORTS:	defw #78c4, #78c5, #78c6, #78c7
+ADDABLE_APP_PORTS:	defw #78cc, #78cd, #78ce, #78cf
 					defw #78d4, #78d5, #78d6, #78d7
 					defw #78dc, #78dd, #78de, #78df
 					defw #78e4, #78e5, #78e6, #78e7
@@ -85,17 +89,10 @@ RAM_SEL_PORTS:		defw #78c4, #78c5, #78c6, #78c7
 					defw #7dec, #7ded, #7dee, #7def
 					defw #7df4, #7df5, #7df6, #7df7
 					defw #7dfc, #7dfd, #7dfe, #7dff
-
-					defw #7ec4, #7ec5, #7ec6, #7ec7
-					defw #7ecc, #7ecd, #7ece, #7ecf
-					defw #7ed4, #7ed5, #7ed6, #7ed7
-					defw #7edc, #7edd, #7ede, #7edf
-					defw #7ee4, #7ee5, #7ee6, #7ee7
-					defw #7eec, #7eed, #7eee, #7eef
-					defw #7ef4, #7ef5, #7ef6, #7ef7
-					defw #7efc, #7efd, #7efe, #7eff
+					defw 0
 					
-					defw #7fc4, #7fc5, #7fc6, #7fc7
+RAM_SEL_SYS_PORTS:	defw #7fc0	
+ADDABLE_SYS_PORTS:	defw #7fc4, #7fc5, #7fc6, #7fc7
 					defw #7fcc, #7fcd, #7fce, #7fcf
 					defw #7fd4, #7fd5, #7fd6, #7fd7
 					defw #7fdc, #7fdd, #7fde, #7fdf
@@ -103,16 +100,68 @@ RAM_SEL_PORTS:		defw #78c4, #78c5, #78c6, #78c7
 					defw #7fec, #7fed, #7fee, #7fef
 					defw #7ff4, #7ff5, #7ff6, #7ff7
 					defw #7ffc, #7ffd, #7ffe, #7fff
+					defw 0
 					
-PS_BankCount:	ld a, RAM_SEL_PORT_COUNT; returns number of banks
+RAM_SEL_BUFF_PORTS:	defw #7fc0	
+ADDABLE_BUFF_PORTS:	defw #7ec4, #7ec5, #7ec6, #7ec7
+					defw #7ecc, #7ecd, #7ece, #7ecf
+					defw #7ed4, #7ed5, #7ed6, #7ed7
+					defw #7edc, #7edd, #7ede, #7edf
+					defw #7ee4, #7ee5, #7ee6, #7ee7
+					defw #7eec, #7eed, #7eee, #7eef
+					defw #7ef4, #7ef5, #7ef6, #7ef7
+					defw #7efc, #7efd, #7efe, #7eff
+					defw 0
+					
+PS_BankCount:	call SysHeapType
+				cp 1
+				jr z, PS_BankCount1
+
+				cp 2
+				jr z, PS_BankCount2
+				
+				cp 3
+				jr z, PS_BankCount3
+				jp SysError
+				
+PS_BankCount1:	
+				ld a, RAM_SEL_PORT_APPHEAP_COUNT
 				ret
 		
-PS_BankSelect:	ld c, a
-				ld a, (ADDR_CURRENTBANK)
+PS_BankCount2:	
+				ld a, RAM_SEL_PORT_SYSHEAP_COUNT
+				ret
+		
+PS_BankCount3:	
+				ld a, RAM_SEL_PORT_BUFFHEAP_COUNT
+				ret
+		
+PS_BankSelect:	ld b, a
+				call SysHeapType
+				ld a, b
+
+				ld hl, RAM_SEL_APP_PORTS	; selects memory bank
+				ld de, ADDR_CURRENTAPPBANK
+				cp 1
+				jr z, PS_BankSelectDo
+
+				ld hl, RAM_SEL_SYS_PORTS	; selects memory bank
+				ld de, ADDR_CURRENTSYSBANK
+				cp 2
+				jr z, PS_BankSelectDo
+
+				ld hl, RAM_SEL_BUFF_PORTS	; selects memory bank
+				ld de, ADDR_CURRENTBUFFBANK
+				cp 3
+				jr z, PS_BankSelectDo
+				jp SysError
+				
+PS_BankSelectDo:
+				ld c, a
+				ld a, (de)
 				cp c
 				ret z
 
-				ld hl, RAM_SEL_PORTS	; selects memory bank
 				ld b, 0
 				add hl, bc
 				add hl, hl
@@ -121,15 +170,12 @@ PS_BankSelect:	ld c, a
 				ld b, (hl)
 				out (c), c
 
-				ld (ADDR_CURRENTBANK), a
+				ld (de), a
 				ret
 		
 PS_BankUnSelect:
 				ld bc, #7fc0			; deselects memory bank (same as selecting bank 0)
 				out (c), c
-
-				xor a
-				ld (ADDR_CURRENTBANK), a
 				ret
 				
 PS_BankStart:	ld hl, RAM_BANK_START	; start of current memory bank
@@ -143,9 +189,9 @@ PS_BankSize:	ld bc, RAM_BANK_SIZE	; size of current memory bank
 
 PS_Initialise:	ret
 
-RelocationTable:
+TABLE_RELOC:
 				dw relocate_count
 				relocate_table
 				relocate_end
 
-RELOC_END:
+END_RELOC:

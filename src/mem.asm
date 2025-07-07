@@ -3,67 +3,76 @@
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
 								; patch data
-PatchTable:		dw PatchLevel1, 0
+TABLE_PATCH:	dw PATCHLEVEL1, 0
 
 				; API level, jumpblock size in bytes, address of jumpblock
-PatchLevel1:	dw 1, (JUMPBLOCKLEVEL1END - JUMPBLOCKLEVEL1), JUMPBLOCKLEVEL1
+PATCHLEVEL1:	dw 1, (END_JUMPBLOCKLEVEL1 - START_JUMPBLOCKLEVEL1), START_JUMPBLOCKLEVEL1
 
-JumpBlock:						; jumpblock to be patched
+JUMPBLOCK:						; jumpblock to be patched
 
-JUMPBLOCKLEVEL1:				; API Level 1
+START_JUMPBLOCKLEVEL1:				; API Level 1
+
+SysDI:			jp 0
+SysEI:			jp 0
+SysError: 		jp 0
+
+SysBuild:		jp 0
+SysCheckPrimal:	jp 0
+SysCommandLine:	jp 0
+SysPropertyPC:	jp 0
+SysRestore:		jp 0
+SysSave:		jp 0
+SysTerminate:	jp 0
 
 SysCharIn:		jp 0
 SysCharOut:		jp 0
 SysCharWait:	jp 0
-SysDI:			jp 0
-SysEI:			jp 0
+SysMathMinDEHL:	jp 0
+SysStrCompare:	jp 0
+SysStrInput:	jp 0
+SysStrLen:		jp 0
+SysStrOutHL:	jp 0
+SysStrOutPC:	jp 0
+SysStrSkip:		jp 0
+
 SysFileDelete:	jp 0
 SysFileExists:	jp 0
 SysFileLoad:	jp 0
 SysFileSave:	jp 0
 SysFileSize:	jp 0
-SysStrInput:	jp 0
-SysStrOutHL:	jp 0
-SystemRestore:	jp 0
-SystemSave:		jp 0
-SysTerminate:	jp 0
 
-SysBuild:		jp 0
-SysCheckPrimal:	jp 0
-SysCommandLine:	jp 0
-SysCopyBuffer: 	jp 0
-SysCopyBufferSize: jp 0
 SysDecompress:	jp 0
 SysDriverList:	jp 0
-SysError: 		jp 0
-SysHeapAlloc:	jp 0
-SysHeapFree:	jp 0
-SysHeapInit:	jp 0
-SysHeapList:	jp 0
 SysLDRPCFile:	jp 0
+SysPatch:		jp 0
+SysRelocate:	jp 0
+
+SysMemTable:	jp 0
+SysCopyBuffer: 	jp 0
+SysCopyBufferSize: jp 0
+SysHeapAddMemory: jp 0
+SysHeapAlloc:	jp 0
+SysHeapCreateNode: jp 0
+SysHeapFree:	jp 0
+SysHeapHeader:	jp 0
+SysHeapInit:	jp 0
+SysHeapRAMSize: jp 0
+SysHeapSelect:	jp 0
+SysHeapType:	jp 0
+
 SysListAppend:	jp 0
 SysListDelete:	jp 0
 SysListInit:	jp 0
+SysListLast:	jp 0
 SysListPrepend:	jp 0
 SysListSearch:	jp 0
 SysListSort:	jp 0
 SysListTraverse: jp 0
-SysMathMinDEHL:	jp 0
-SysMemTable:	jp 0
-SysPatch:		jp 0
-SysPropertyPC:	jp 0
-SysRAMSize:		jp 0
-SysRelocate:	jp 0
-SysStrCompare:	jp 0
-SysStrLen:		jp 0
-SysStrOutPC:	jp 0
-SysStrSkip:		jp 0
 
-PATCHBACKDESTINATION:
+DESTIN_PATCHBACK:
 
+SysBankCount: 	jp 0
 SysBank:		jp 0
-SysBankCount:	jp 0
-SysBankedRAMSize: jp 0
 SysBankEnd:		jp 0
 SysBankSelect:	jp 0
 SysBankSize:	jp 0
@@ -73,13 +82,12 @@ SysMemCopyF2F:	jp 0
 SysMemCopyF2N:	jp 0
 SysMemCopyN2F:	jp 0
 
-JUMPBLOCKLEVEL1END:	
+END_JUMPBLOCKLEVEL1:	
 
-PATCHBACKSTART:					; API Level 1 (patch back)
+START_PATCHBACK:					; API Level 1 (patch back)
 
-				jp MEM_Bank
 				jp PS_BankCount
-				jp MEM_BankedRAMSize
+				jp MEM_Bank
 				jp PS_BankEnd
 				jp PS_BankSelect
 				jp PS_BankSize
@@ -89,55 +97,44 @@ PATCHBACKSTART:					; API Level 1 (patch back)
 				jp MEM_MemCopyF2N
 				jp MEM_MemCopyN2F
 
-PATCHBACKEND:
+END_PATCHBACK:
 								; WARNING CODE BELOW HERE ONLY IN THIS FILE
 
-ADDR_CURRENTBANK: db 0			; the currently selected bank
+ADDR_CURRENTAPPBANK: db 0		; the currently selected application bank
+ADDR_CURRENTSYSBANK: db 0		; the currently selected system bank
+ADDR_CURRENTBUFFBANK: db 0		; the currently selected buffer bank
 
 					; ------------------------- Bank
 					; -- parameters:
 					; -- 	none
 					; --
 					; -- return:
-					; -- 	A = the currently selected bank
-					; -- 	all other registers preserved
+					; -- 	A = the currently selected application bank
+					; --	note: bank 0 is default (usually internal) ram
+					; -- 	all other registers PRESERVED
 
-MEM_Bank:		ld a, (ADDR_CURRENTBANK)
+MEM_Bank:		call SysHeapType
+
+				or a
+				ret z	; we only have 0 for default ram
+				
+				cp 1
+				jr z, MEM_Bank1
+				
+				cp 2
+				jr z, MEM_Bank2
+
+				cp 3
+				jr z, MEM_Bank3
+
+MEM_Bank1:		ld a, (ADDR_CURRENTAPPBANK)
 				ret
 
-					; ------------------------- BankSize
-					; -- parameters:
-					; -- 	none
-					; -- 
-					; -- return:
-					; -- 	BCDE = size of all banked RAM
-					; -- 	all other registers unknown
+MEM_Bank2:		ld a, (ADDR_CURRENTSYSBANK)
+				ret
 
-MEM_BankedRAMSize:
-				ld hl, RAM_SEL_PORT_COUNT
-
-				ld bc, 0
-				ld de, 0
-				
-MEM_BankedRAMSizeLoop:			
-				ld a, l
-				or h
-				ret z
-				
-				push hl
-				
-				; add length HL to BCDE
-				ld hl, RAM_BANK_SIZE
-				add hl, de
-				ex de, hl
-				ld hl,0
-				adc hl, bc
-				ld c, l
-				ld b, h
-
-				pop hl
-				dec hl
-				jr MEM_BankedRAMSizeLoop
+MEM_Bank3:		ld a, (ADDR_CURRENTBUFFBANK)
+				ret
 
 					; ------------------------- Copy Far to Far (via copy buffer)
 					; -- parameters:
@@ -218,20 +215,26 @@ MEM_MemCopyF2FLoop:
 
 				pop de		; de = bank numbers
 				pop bc		; bc = iteration copysize
-				
+				push de		; *
 							; add iteration copysize to ix
 				ld hl, bc	; hl = copybuffersize
-				add hl, ix
+				push ix
+				pop de
+				add hl, de
 				ld ix, hl
 							; add iteration copysize to iy
 				ld hl, bc	; hl = copybuffersize
-				add hl, iy
+				push iy
+				pop de
+				add hl, de
 				ld iy, hl
+				
 							; subtract copysize from bc
 				pop hl		; hl = total iteration copysize
 				add hl, bc
 				ld bc, hl
 
+				pop de		; *
 				jr MEM_MemCopyF2FLoop
 				
 MEM_MemCopyF2FEnd:
@@ -293,9 +296,9 @@ MEM_MemCopyN2F:	push hl
 
 Main:
 								; patch this component as the loader patched it already
-				ld hl, PATCHBACKSTART
-				ld bc, PATCHBACKEND - PATCHBACKSTART
-				ld de, PATCHBACKDESTINATION
+				ld hl, START_PATCHBACK
+				ld bc, END_PATCHBACK - START_PATCHBACK
+				ld de, DESTIN_PATCHBACK
 				ldir
 
 				call PS_Initialise

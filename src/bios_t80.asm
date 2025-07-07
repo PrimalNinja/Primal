@@ -1,24 +1,24 @@
 ;#dialect=RASM
 
-BUILD_ADDR		equ #0000
-ALLOCSIZE		equ 0
+ORG_BUILD		equ #0000
+SIZE_ALLOC		equ 0
 
-				org BUILD_ADDR
+				org ORG_BUILD
 				relocate_start
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
-RELOC_START:	jp Main			; jump to entry point
+START_RELOC:	jp Main			; jump to entry point
 
 								; header
-				dw RelocationTable - RELOC_START
-				dw BUILD_ADDR
-				dw ALLOCSIZE	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
+				dw TABLE_RELOC - START_RELOC
+				dw ORG_BUILD
+				dw SIZE_ALLOC	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
 				dw 1			; version
 				dw 1			; API compatability ID
 				db 1			; required memory type
-				dw PatchTable
-				dw JumpBlock	; pointer to the jumpblock
+				dw TABLE_PATCH
+				dw JUMPBLOCK	; pointer to the jumpblock
 				dw 0			; pointer to the ISR
 				dw 0			; pointer to the component that loaded this
 				db "PRIMAL", 0	; type must be after the jump to main
@@ -32,9 +32,9 @@ PS_KeyIn:		ret
 		
 PS_ISRInit:		ret	
 
-RelocationTable:
+TABLE_RELOC:
 				dw relocate_count
 				relocate_table
 				relocate_end
 
-RELOC_END:
+END_RELOC:

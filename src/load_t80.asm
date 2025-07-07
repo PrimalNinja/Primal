@@ -1,13 +1,13 @@
 ;#dialect=RASM
 
-BUILD_ADDR		equ #4a00
-STACKSIZE		equ 128
+ORG_BUILD		equ #4a00
+SIZE_STACK		equ 128
 
-COPYBUFFERSIZE	equ 128
-COPYBUFFERADDR	equ ADDR_BUFFERS
-ALLOCSIZE		equ COPYBUFFERSIZE
+SIZE_COPYBUFFER	equ 128
+ADDR_COPYBUFFER	equ ADDR_BUFFERS
+SIZE_ALLOC		equ SIZE_COPYBUFFER
 
-				org BUILD_ADDR
+				org ORG_BUILD
 
 								; WARNING NO CODE FROM HERE IN THIS FILE
 
@@ -15,13 +15,13 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
-ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
-ALLOC_SIZE:		dw ALLOCSIZE	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
+ADDR_BUILD:		dw ORG_BUILD	; the build address, used for relocation
+ALLOC_SIZE:		dw SIZE_ALLOC	; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
-ADDR_PATCHTABLE:dw PatchTable
-ADDR_JUMPBLOCK:	dw JumpBlock	; pointer to the jumpblock
+ADDR_PATCHTABLE:dw TABLE_PATCH
+ADDR_JUMPBLOCK:	dw JUMPBLOCK	; pointer to the jumpblock
 ADDR_ISR:		dw 0			; pointer to the ISR
 ADDR_LOADER:	dw 0			; always 0 for loader
 MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
@@ -39,15 +39,21 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 253 = Reserved RAM
 								; 254 = ROM
 								; 255 = Extension Block (anything following an extension record is ignored)
-MemTable:		
+ADDR_BANKSTART	equ 0
+ADDR_BANKEND 	equ 0
+
+TABLE_MEMORY:		
 				db 1
-SYSTEMPOOLADDR:	dw ADDR_BUFFERS + ALLOCSIZE
+ADDR_MEMPOOL:	dw ADDR_BUFFERS + SIZE_ALLOC
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
 				dw 0, 0	
 
-PS_RAMInit:		ret				; initialise RAM
+PS_RAMInit:		pop bc			; initialise RAM
+				; do something
+				push bc
+				ret				
 
 								; table of property tables
 PropertyTable:	dw PropertyTable1, 0

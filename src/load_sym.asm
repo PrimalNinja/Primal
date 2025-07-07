@@ -1,15 +1,15 @@
 ;#dialect=RASM
 
-BUILD_ADDR		equ #0000
-STACKSIZE		equ 128
+ORG_BUILD		equ #0000
+SIZE_STACK		equ 128
 
-COPYBUFFERSIZE	equ 128
-COPYBUFFERADDR	equ ADDR_BUFFERS
-ALLOCSIZE		equ COPYBUFFERSIZE
+SIZE_COPYBUFFER	equ 128
+ADDR_COPYBUFFER	equ ADDR_BUFFERS
+SIZE_ALLOC		equ SIZE_COPYBUFFER
 
 RAM_RESERVE		equ #4000	; (32k)
 
-				org BUILD_ADDR
+				org ORG_BUILD
 				relocate_start
 
 								; Symbos stuff
@@ -96,13 +96,13 @@ LOADER:			jp Main			; loader is a platform dependent program loader
 
 								; header
 ADDR_RELOCTABLE:dw 0			; this isn't being relocated, so always 0
-ADDR_BUILD:		dw BUILD_ADDR	; the build address, used for relocation
+ADDR_BUILD:		dw ORG_BUILD	; the build address, used for relocation
 ALLOC_SIZE:		dw 0			; allocate this amount of ram after loading this module so it isn't stored in the binary, usually it overwrites the relocation table
 ADDR_VERSION:	dw 1			; version
 ADDR_APICOMPAT:	dw 1			; API compatability ID
 ADDR_REQMEMTYPE:db 1			; required memory type
-ADDR_PATCHTABLE:dw PatchTable
-ADDR_JUMPBLOCK:	dw JumpBlock	; pointer to the jumpblock
+ADDR_PATCHTABLE:dw TABLE_PATCH
+ADDR_JUMPBLOCK:	dw JUMPBLOCK	; pointer to the jumpblock
 ADDR_ISR:		dw 0			; pointer to the ISR
 ADDR_LOADER:	dw 0			; always 0 for loader
 MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
@@ -120,15 +120,21 @@ MSG_PRIMAL:		db "PRIMAL", 0	; type must be after the jump to main
 								; 253 = Reserved RAM
 								; 254 = ROM
 								; 255 = Extension Block (anything following an extension record is ignored)
-MemTable:		
+ADDR_BANKSTART	equ 0
+ADDR_BANKEND 	equ 0
+
+TABLE_MEMORY:		
 				db 1
-SYSTEMPOOLADDR:	dw 0
+ADDR_MEMPOOL:	dw 0
 				dw 0
 
 				db 0			; End of Block / can be patched to be an Extension Block
 				dw 0, 0	
 
-PS_RAMInit:		ret				; initialise RAM
+PS_RAMInit:		pop bc			; initialise RAM
+				; do something
+				push bc
+				ret				
 
 								; table of property tables
 PropertyTable:	dw PropertyTable1, 0
@@ -267,7 +273,7 @@ Transfer_Area_Start:  ; (Will be loaded to 256-byte boundary)
 				; selected tab etc.)
 
 				;--- Main process stack definition  ---
-				ds STACKSIZE            ; Your app default stack space, increase if needed
+				ds SIZE_STACK            ; Your app default stack space, increase if needed
 App_Stack:  	ds 6*2                  ; Fixed space for register storage
 				dw App_Start            ; The stack content defines your applications start address
 App_Process_ID:

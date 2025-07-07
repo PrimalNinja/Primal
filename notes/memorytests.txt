@@ -1,0 +1,40 @@
+
+		<-------WINAPE-------->		<------CPC664----->
+		64	128	320	320	384	576		320	320	320	320	576
+				R	S				R	R>S	S	S>R	R+S
+
+#7fc4	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fc5	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fc6	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fc7	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fcc	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fcd	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fce	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fcf	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fd4	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fd5	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fd6	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fd7	-	-	Y	-	-	Y		Y	-	-	Y	Y
+#7fdc	-	-	-	-	Y	Y		Y	-	-	Y	Y
+#7fdd	-	-	-	-	Y	Y		Y	-	-	Y	Y
+#7fde	-	-	-	-	Y	Y		Y	-	-	Y	Y
+#7fdf	-	-	-	-	Y	Y		Y	-	-	Y	Y
+#7fe4	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7fe5	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7fe6	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7fe7	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7fec	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7fed	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7fee	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7fef	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7ff4	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7ff5	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7ff6	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7ff7	-	-	-	Y	Y	Y		-	Y	Y	-	Y
+#7ffc	-	Y	Y	Y	Y	Y		-	Y	Y	-	Y
+#7ffd	-	Y	Y	Y	Y	Y		-	Y	Y	-	Y
+#7ffe	-	Y	Y	Y	Y	Y		-	Y	Y	-	Y
+#7fff	-	Y	Y	Y	Y	Y		-	Y	Y	-	Y
+
+Is there some special circuitry in some 256K RAM expansions that moves fc, fd, fe, ff up to dc, dd, de, df if a 256k silicon disc is present?
+A bug in WinApe?
