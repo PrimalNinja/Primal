@@ -121,6 +121,7 @@ TABLE_BUFFHEAP:	dw 0, 0, 0
 CopyBufferInit:					; initialise the copy buffer
 				xor a
 				ld hl, ADDR_BUFFERS
+				ld (hl), a
 				ld de, ADDR_BUFFERS + 1
 				ld bc, SIZE_ALLOC - 1
 				ldir
@@ -138,6 +139,7 @@ CopyBufferInit:					; initialise the copy buffer
 GetLoaderAddr:					; hl = code address
 				ld bc,(ADDR_LOADER - LOADER)
 				add hl, bc
+				ld hl, (hl)
 				ret
 			
 					; ------------------------- GetPatchTableAddr
@@ -152,6 +154,7 @@ GetLoaderAddr:					; hl = code address
 GetPatchTableAddr:				; hl = code address
 				ld bc,(ADDR_PATCHTABLE - LOADER)
 				add hl, bc
+				ld hl, (hl)
 				ret
 				
 					; ------------------------- GetPatchTableLevel
